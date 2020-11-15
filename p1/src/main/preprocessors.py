@@ -254,13 +254,21 @@ class Pipeline(KFold):
         self.n_splits = 1
         self.random_state = None
 
-        if idx != None:
-            self.idx = idx
+        try:
+            # если объект None или не мультииндекс (для теста)
+            if idx != None:
+                self.resampleobject(idx, resampling)
+        except ValueError:
+            # если обхект мультииндекс
+            self.resampleobject(idx, resampling)
 
-            if isinstance(resampling, Iterable):
-                self.resamplinglist = resampling
-            else:
-                self.resamplinglist = [resampling,]
+    def resampleobject(self, idx, resampling):
+        self.idx = idx
+
+        if isinstance(resampling, Iterable):
+            self.resamplinglist = resampling
+        else:
+            self.resamplinglist = [resampling, ]
 
 
     def resample(self):
