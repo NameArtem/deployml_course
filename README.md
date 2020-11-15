@@ -1,7 +1,7 @@
 # deploy ml_course :rocket:
 
 
-### Содержание :memo:
+### Содержание :page_with_curl:
 * [О курсе](#about)
 * [Часть 1](#p1)
 * [Часть 2](#p2)
@@ -16,7 +16,7 @@
 
 -----------------------
 
-### О курсе
+### О курсе :key:
 
 >
 
@@ -47,7 +47,7 @@
 
 -----------------------
 
-### Часть 1
+### Часть 1 :beginner:
 
 > Вступительная часть к процессу продуктивизации моделей машинного обучения.
 
@@ -264,9 +264,12 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p2"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
+
 
 ### Часть 3
 
@@ -274,9 +277,12 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p3"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
+
 
 ### Часть 4
 
@@ -284,9 +290,12 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p4"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
+
 
 ### Часть 5
 
@@ -294,9 +303,12 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p5"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
+
 
 ### Часть 6
 
@@ -304,9 +316,12 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p6"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
+
 
 ### Часть 7
 
@@ -314,9 +329,11 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p7"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
 
 
 ### Часть 8
@@ -325,6 +342,8 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 <a name="p8"></a>
 
-####
+#### tbd
 
 <br>
+
+------------
