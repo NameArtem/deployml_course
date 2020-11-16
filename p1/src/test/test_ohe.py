@@ -1,6 +1,11 @@
 import pandas as pd
 import pytest
 
+import os, sys
+PACKAGE_PARENT = '../..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+CURROOT = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from src.main.preprocessors import Pipeline
 
 def test_add_col_passes():

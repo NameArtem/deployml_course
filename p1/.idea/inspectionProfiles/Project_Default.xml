@@ -1,0 +1,29 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="9">
+            <item index="0" class="java.lang.String" itemvalue="xgboost" />
+            <item index="1" class="java.lang.String" itemvalue="lightgbm" />
+            <item index="2" class="java.lang.String" itemvalue="python-coveralls" />
+            <item index="3" class="java.lang.String" itemvalue="pytest-cov" />
+            <item index="4" class="java.lang.String" itemvalue="pytest-html" />
+            <item index="5" class="java.lang.String" itemvalue="pytest-xdist" />
+            <item index="6" class="java.lang.String" itemvalue="hypothesis" />
+            <item index="7" class="java.lang.String" itemvalue="flake8" />
+            <item index="8" class="java.lang.String" itemvalue="pytest-mock" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="TennisGame" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
