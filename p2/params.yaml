@@ -1,0 +1,10 @@
+main:
+    n_estimators: 32
+    max_depth: 12
+    min_sample_leaf: 3
+    criterion: 'mse'
+rf_binar:
+    n_estimators: 16
+    max_depth: 8
+    min_sample_leaf: 1
+    criterion: 'auc'

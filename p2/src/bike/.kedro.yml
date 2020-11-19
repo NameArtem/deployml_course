@@ -1,0 +1,6 @@
+context_path: bike.run.ProjectContext
+project_name: "bike"
+project_version: "0.16.6"
+package_name: "bike"
+hooks:
+  - bike.hooks.project_hooks

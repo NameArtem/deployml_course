@@ -1,0 +1,63 @@
+dvc run -n full_process ^
+-d config/config.py ^
+-d config/logging_conf.py ^
+-d data/data/_station_data.csv ^
+-d data/data/trip_data.csv ^
+-d data/data/weather_data.csv ^
+-d src/main/preprocessors.py ^
+-d src/main/simple_etl.py ^
+-d src/main/train_pipeline.py ^
+-d src/main/predict.py ^
+-d main.py ^
+-o data/clean_data/cleandata0.1.0.csv ^
+-M modelparam.yaml ^
+python main.py
+
+# выбор файла, не может быть -d и -o (одновременно)
+
+# в другом процессе
+#-o data/split_data/xtest.csv ^
+#-o data/split_data/xtrain.csv ^
+#-o data/split_data/ytest.csv ^
+#-o data/split_data/ytrain.csv ^
+
+
+# each files
+dvc run -n etl  ^
+-d config/config.py ^
+-d config/logging_conf.py ^
+-d data/data/_station_data.csv ^
+-d data/data/trip_data.csv ^
+-d data/data/weather_data.csv ^
+-d src/main/preprocessors.py ^
+-d src/main/simple_etl.py ^
+-d data/clean_data/cleandata0.1.0.csv ^
+python src/main/simple_etl.py
+
+
+dvc run -n train ^
+-d config/config.py ^
+-d config/logging_conf.py ^
+-d src/main/preprocessors.py ^
+-d src/main/train_pipeline.py ^
+-d data/clean_data/cleandata0.1.0.csv ^
+-o data/split_data/xtest0.1.0.csv ^
+-o data/split_data/xtrain0.1.0.csv ^
+-o data/split_data/ytest0.1.0.csv ^
+-o data/split_data/ytrain0.1.0.csv ^
+-o data/model/rf_model0.1.0 ^
+python src/main/train_pipeline.py
+
+dvc run -n predict ^
+-d data/model/rf_model0.1.0 ^
+-d config/config.py ^
+-d config/logging_conf.py ^
+-d src/main/quality.py ^
+-d src/main/preprocessors.py ^
+-d src/main/predict.py ^
+-d data/split_data/xtest0.1.0.csv ^
+-d data/split_data/xtrain0.1.0.csv ^
+-d data/split_data/ytest0.1.0.csv ^
+-d data/split_data/ytrain0.1.0.csv ^
+-M data/metrics/rf_model0.1.0 ^
+python src/main/predict.py
