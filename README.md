@@ -45,6 +45,10 @@
 
 <br>
 
+### Видео - плайлист курса на YouTube
+
+[YouTube](https://www.youtube.com/playlist?list=PLEwK9wdS5g0qBXa94W7W0RNmrE0Ruook4)
+
 -----------------------
 
 ### Часть 1 (Jupyter в ProductCode) :beginner:
