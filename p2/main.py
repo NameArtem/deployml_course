@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # сомтрим на существование файла с параметрами
     try:
         params = yaml.safe_load(open('modelparam.yaml'))
-        _logger.warning(
+        _logger.info(
             f"File 'modelparam.yaml' was found",
         )
     except FileNotFoundError:

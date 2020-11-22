@@ -5,7 +5,7 @@
 * [О курсе](#about)
 * [Jupyter в ProductCode](#p1)
 * [Версионирование процесса](#p2)
-* [Часть 3](#p3)
+* [API для модели](#p3)
 * [Часть 4](#p4)
 * [Часть 5](#p5)
 * [Часть 6](#p6)
@@ -30,7 +30,7 @@
 
 В результате вы получите полное представление о процессе продуктивизации моделей, что позволит сократить время выхода на рынок ваших решений и поможет понять инженерный процесс разработки.
 
-Курс разработан при поддержке [НИУ ВШЭ](https://cs.hse.ru/)
+Курс разработан при поддержке [НИУ ВШЭ](https://cs.hse.ru/dpo)
 
 [Ссылка на курс на сайте НИУ ВШЭ](https://cs.hse.ru/dpo/announcements/414116513.html?fbclid=IwAR3L6Rv_APhsUJaBqNJnbl1TNg9Q9uhTHGGJDCGZwYB8lub0uJ93GKhRoQI)
 
@@ -44,6 +44,10 @@
 - Командная строка Linux
 
 <br>
+
+### Видео - плайлист курса на YouTube
+
+[YouTube](https://www.youtube.com/playlist?list=PLEwK9wdS5g0qBXa94W7W0RNmrE0Ruook4)
 
 -----------------------
 
@@ -335,13 +339,16 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 Предложена мультиветвенная система версиониования для монолитного проекта. **! Определитесь с неймингом процессов!**
 
-![](img/GIT.jpg)
+![](img/git.jpg)
 
 #### DVC
+
+[dvc](https://dvc.org/)
 
 
 #### KEDRO
 
+[kedro](https://kedro.readthedocs.io/en/stable/)
 
 #### Задание для самостоятельной работы
 
@@ -354,7 +361,7 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 ------------
 
 
-### Часть 3
+### API для модели
 
 >
 

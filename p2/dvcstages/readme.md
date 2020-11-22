@@ -17,7 +17,7 @@ dvc init
 # файл сторадже
 dvc remote add -d localremote /data/dvc-storage
 
-# настройка конфига 
+# настройка конфига (выключаем трекинг нашей активности)
 dvc config core.analytics false
 ```
 -------------------

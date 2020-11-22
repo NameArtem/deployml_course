@@ -9,7 +9,7 @@ dvc run -n full_process ^
 -d src/main/train_pipeline.py ^
 -d src/main/predict.py ^
 -d main.py ^
--o data/clean_data/cleandata0.1.0.csv ^
+-O data/clean_data/cleandata0.1.0.csv ^
 -M modelparam.yaml ^
 python main.py
 
@@ -31,7 +31,7 @@ dvc run -n etl  ^
 -d data/data/weather_data.csv ^
 -d src/main/preprocessors.py ^
 -d src/main/simple_etl.py ^
--d data/clean_data/cleandata0.1.0.csv ^
+-o data/clean_data/cleandata0.1.0.csv ^
 python src/main/simple_etl.py
 
 
