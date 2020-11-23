@@ -339,16 +339,145 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 Предложена мультиветвенная система версиониования для монолитного проекта. **! Определитесь с неймингом процессов!**
 
+О Git flow для DE/DS и основными шаблонами можно ознакомиться [в другом репозитории](https://github.com/NameArtem/gitFlowDE)
+
+По ссылке вы найдете:
+
+* шаблон для проекта
+
+* шаблон для adhoc
+
+* шаблон для Spark проекта
+
+* набор готового кода для git
+
+Ещё немного информации о git - [больше волшебства](https://dangitgit.com/ru)
+
 ![](img/git.jpg)
 
 #### DVC
 
-[dvc](https://dvc.org/)
+Рассмотрим инструмент [dvc](https://dvc.org/), отличный для экспериментов и фиксации процессов
 
+```bash
+
+dvc init
+
+# отключаем аналитику наших процессов (чтобы не собиралась статистика)
+dvc config core.analytics false
+
+# устанавливаем наше хранилище для файлов
+dvc remote add -d localremote /data/dvc-storage
+```
+
+----------------------------
+
+Создаем params.yaml по шаблону:
+```
+# file params.yaml
+название модели (эксперимента):
+    параметры для эксперимента
+```
+
+----------------------------
+
+Создаем шаги наших экспериментов (для трекинга):
+```bash
+dvc run -n STAGE_NAME \
+-d все файлы от которых зависит процесс
+-O все файлы, которые будут являться результатами процесса ( но не будут версионироваться)
+-o все файлы, которые будут являться результатами процесса (будут версионироваться)
+-M файл с метрикой
+```
+
+----------------------------
+
+Основные команды для процессинга 
+
+```bash
+# воспроизведение процесса (повторение от шага 1 до финального)
+dvc repro
+
+# сравнение параметров / метркиа
+dvc params diff
+dvc metrics diff
+
+# визуализация процесса
+dvc dag
+```
+
+---------------------------
+
+<br>
 
 #### KEDRO
 
-[kedro](https://kedro.readthedocs.io/en/stable/)
+Отличный проект [kedro](https://kedro.readthedocs.io/en/stable/), на основе которого будут выстроеные процессы на данном курсе
+
+Проект является набором правил для разработки в МЛ. Но во время работы следует учитывать:
+ * Не удалять (только дополнять) файл `.gitignore`
+ * Работать в рамках [конвенции DE разработки](https://kedro.readthedocs.io/en/stable/12_faq/01_faq.html?highlight=convention#what-is-data-engineering-convention)
+ * Переменные и конфиги эфемерные 
+ * Конфиги в `conf/local/`
+
+```
+# создать структуру проекта
+kedro new
+
+# в src/projectname/
+# нужно создать pipeline (для каждого типа процессов - свой пайплайн)
+
+# запуск jupyter notebook в kedro
+kedro jupyter notebook
+```
+
+--------------------------
+
+В проекте должны быть следующие pipelines:
+
+- data engineering(etl + обработка данных)
+
+- data science(обучение модели)
+
+- predict_pipeline(предикт по модли и проверка качестве)
+
+- predictapi_pipeline(предикт для работы через API)
+
+![](img/struct.jpg)
+
+```python
+# добавляем созданные pipeline 
+# в hook для запуска
+de_pipe = de.create_pipeline()
+ds_pipe = ds.create_pipeline()
+pr_pipe = pr.create_pipeline()
+pra_pipe = pra.create_pipeline()
+
+return {
+    "de": de_pipe,
+    "ds": ds_pipe,
+    "predict": pr_pipe,
+    "predict_api": pra_pipe,
+    "__default__": de_pipe + ds_pipe + pr_pipe,
+}
+```
+
+Это позволяем запускать код по имени pipeline
+
+```
+# в bash
+kedro run --pipeline='predict_api'
+
+# в функции python
+context.run(pipeline_name='predict_api')
+```
+
+-----------------------------
+
+Pipeline модели в Kedro (у данного проекта)
+
+![](img/kedrodug.jpg)
+
 
 #### Задание для самостоятельной работы
 
@@ -363,11 +492,29 @@ def test_fix_new_boxes_nan_replaced(raw_prog):
 
 ### API для модели
 
->
+> Зачем DS/DE знать про API?
+
+Для выполнения данной работы вам может понадобиться: сервер API, получатель API. 
+Вы сможет найти их простые реализации [здесь](https://github.com/NameArtem/deployml_course/tree/main/p3_api_serv)
+
+
+![](img/tm.jpg)
 
 <a name="p3"></a>
 
-#### tbd
+В данной работе мы сделаем выбор 1 из 3 основных реализаций API. 
+
+![](img/apis.jpg)
+
+<br>
+
+------------
+
+#### Задание для самостоятельной работы
+
+**Задание**
+
+![](img/hw3.jpg)
 
 <br>
 
