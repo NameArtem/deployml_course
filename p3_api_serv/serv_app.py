@@ -30,6 +30,11 @@ async def index():
     df = read_data()
     return get_index_val(df)
 
+# data {c: []},{c: []}, {c: []}, {c: []}
+
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=9876)
