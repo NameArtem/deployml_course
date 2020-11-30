@@ -509,7 +509,7 @@ Pipeline модели в Kedro (у данного проекта)
 
 Мы будем использовать паттерны, которые поставляются с Kedro.
 
-```
+```python
 # подключаем контекст Kedro
 from kedro.context import load_context
 from kedro.extras.datasets.api import APIDataSet
@@ -535,7 +535,7 @@ answer = {
         "row_index": st.json()['index']
         "predict": model.predict(df)
 }
-
+```
 
 <br>
 
@@ -586,9 +586,9 @@ def index_creator(df, mind, maxd, freq):
                             names=[by, newCol])
 ```
 
+Скрипт по разработке теста
 
-
-```
+```python
 import pandas as pd
 import numpy as np
 
