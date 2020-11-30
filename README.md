@@ -506,6 +506,37 @@ Pipeline модели в Kedro (у данного проекта)
 
 ![](img/apis.jpg)
 
+
+Мы будем использовать паттерны, которые поставляются с Kedro.
+
+```
+# подключаем контекст Kedro
+from kedro.context import load_context
+from kedro.extras.datasets.api import APIDataSet
+import json
+
+# загружаем проект
+context = load_context("../")
+catalog = context.catalog
+
+# используя APIDataSet из Kedro
+# и устанавливаем конфиг
+st = APIDataSet(
+        url = "http://127.0.0.1:9876/data",
+        headers = {"content-type": "application/json"}
+).load()
+
+# записываем в DF для работы из json
+df = pd.DataFrame.from_dict(st.json()['data'], orient='index').T
+
+# формируем результат для отправки назад по API
+answer = {
+        "predict_date": st.headers['date']
+        "row_index": st.json()['index']
+        "predict": model.predict(df)
+}
+
+
 <br>
 
 ------------
@@ -523,9 +554,121 @@ Pipeline модели в Kedro (у данного проекта)
 
 ### CI/CD
 
->
+> Разработка через тестирование для DS - реальность!
 
 <a name="p4"></a>
+
+Рассмотрим, какие тесты нужно делать для DS/DE пайплайнов и как их делать. И немного погрузимся в методологию TDD.
+
+Опять переделаем пайплайн, так как рассмотрев [пример](notebooks/testProblem.ipynb) проблемы и поймем, что делали работу не по TDD методологии.
+
+![](img/whattest.jpg)
+
+![](img/testPyrom.jpg)
+
+![](img/ciProb.jpg)
+
+</br>
+
+#### Тесты с hypothesis
+
+Рассмотрим пример разработки теста для функции:
+```python
+# функция для тестирования
+def index_creator(df, mind, maxd, freq):
+    by = 'Station'
+    newCol = 'Datetime'
+    return pd.MultiIndex \
+             .from_product([df[by].sort_values().unique(),
+                            pd.Index(pd.date_range(mind,
+                                                   maxd,
+                                                   freq=freq))],
+                            names=[by, newCol])
+```
+
+
+
+```
+import pandas as pd
+import numpy as np
+
+from hypothesis import given
+from hypothesis import strategies as st
+from hypothesis.extra.pandas import data_frames, column
+from scipy.special import expit
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+# создадим DF для работы (генерация случайного ДатаФРейма)
+# генерация данных для функции
+# получаем элементы из given
+# создаем случайный
+import string
+
+df = data_frames(
+        [
+            column('Station', dtype=str,
+                   elements=st.text(alphabet=f"{string.ascii_letters}{string.ascii_lowercase}", min_size=5)),
+            column('DateOfPeriod',
+                   elements=st.datetimes(min_value=datetime.datetime.strptime('2019-01-01 00:00:00', '%Y-%m-%d %H:%M:%S'),
+                                         max_value=datetime.datetime.strptime('2021-01-01 00:00:00', '%Y-%m-%d %H:%M:%S'))),
+        ]
+    ).example()
+
+# создаем переменные для даты и время
+mn = st.datetimes(min_value=datetime.datetime.strptime('2019-01-01 00:00:00', '%Y-%m-%d %H:%M:%S'),
+                 max_value=datetime.datetime.strptime('2021-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')).example()
+mx = st.datetimes(min_value=datetime.datetime.strptime('2019-01-01 00:00:00', '%Y-%m-%d %H:%M:%S'),
+                 max_value=datetime.datetime.strptime('2021-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')).example()
+				 
+				 
+				 
+# что нам нужно получить для функции
+# переменные
+mind = mn
+maxd = mx
+freq = 'H'
+# константы
+by = 'Station'
+newCol = 'Datetime'
+
+pd.MultiIndex \
+  .from_product([df[by].sort_values().unique(),
+                 pd.Index(pd.date_range(mind,
+                                        maxd,
+                                        freq=freq))],
+                 names=[by, 
+                        newCol])
+
+# тесты
+# соответсвие класса (smoke)
+index_creator(df, mn, mx, 'D').__class__ == pd.core.indexes.multi.MultiIndex
+# правильный способы проверки класса
+isinstance(index_creator(df, mn, mx, 'D'), pd.MultiIndex)
+# что будет в нужной структуре и не пустой индекс с уровнями, именами и определителями
+try:
+    pd.testing.assert_index_equal(index_creator(df, mn, mx, 'D'),
+                                      pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []], 
+                                                                       names = ['Station', 'Datetime'],
+                                                                       codes=[[], []]))
+except AssertionError:
+    True
+    
+
+
+with pytest.raises(AssertionError):
+    pd.testing.assert_index_equal(index_creator(df, mn, mx, 'D'),
+                                  pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []], 
+                                                                   names = ['Station', 'Datetime'],
+                                                                   codes=[[], []]))
+```
+
+
+</br>
+
+#### Задание для самостоятельной работы
 
 
 **Задание**
