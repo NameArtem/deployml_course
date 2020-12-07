@@ -1,0 +1,52 @@
+{
+  "data_asset_type": "Dataset",
+  "expectation_suite_name": "bike.table.trips_",
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "column": "Trip_ID"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "Trip_ID"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_mean_to_be_between",
+      "kwargs": {
+        "column": "Duration",
+        "max_value": 1036,
+        "min_value": 307
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "Subscriber_Type",
+        "mostly": 0.99,
+        "value_set": [
+          "Subscriber",
+          "Customer"
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "Start_Station",
+        "regex": "^\\w+ \\w+ \\w+"
+      },
+      "meta": {}
+    }
+  ],
+  "meta": {
+    "great_expectations_version": "0.13.1"
+  }
+}

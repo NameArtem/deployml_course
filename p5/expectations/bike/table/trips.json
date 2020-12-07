@@ -1,0 +1,16 @@
+{
+  "data_asset_type": "Dataset",
+  "expectation_suite_name": "bike.table.trips",
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "column": "Trip_ID"
+      },
+      "meta": {}
+    }
+  ],
+  "meta": {
+    "great_expectations_version": "0.13.1"
+  }
+}
