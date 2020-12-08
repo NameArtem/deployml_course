@@ -680,13 +680,152 @@ with pytest.raises(AssertionError):
 
 ### Feature Store
 
->
+> Сделаем шаг в сторону от модели и рассмотрим специальный тип хранилища, но для DS.
 
 <a name="p5"></a>
 
-#### tbd
+#### Great Expectations
 
-<br>
+[Great Expectations](https://docs.greatexpectations.io/en/latest/) - это специальный инструмент для тестирования данных и фиксации их профилирования. 
+
+GE встраиватся в pipeline для тестирования входных данных.
+
+![](img/ge_usercase.jpg)
+
+Создан для DE/DS:
+
+* Помощь в работе с данными и мониторинге
+
+* Помощь в нормализации данных
+
+* Улучшение взаимодействия аналитиков и инженеров
+
+* Построение автоматической верификации новых данных
+
+* Ускорение поиска ошибок в данных
+
+* Улучшение передачи данных между командами
+
+* Построение документации для данных
+
+
+Пример использования:
+
+```python
+import datetime
+import numpy as np
+import pandas as pd
+import great_expectations as ge
+import great_expectations.jupyter_ux
+from great_expectations.datasource.types import BatchKwargs
+
+# создаем контекст
+context_ge = ge.data_context.DataContext("..")
+
+# создаем набор параметров
+expectation_suite_name = "bike.table.trips.st" # имя набора
+context_ge.create_expectation_suite(expectation_suite_name)
+
+# определяем тип ресурсов (вот, что мы забыли - 2)
+context_ge.add_datasource('pandas_datasource', class_name='PandasDatasource')
+batch_kwargs = {'dataset': catalog.load('trip_data'), 'datasource': "pandas_datasource"}
+
+# создаем батч с данными и передаем в него имя набора, которое будет наполнять тестами
+batch = context_ge.get_batch(batch_kwargs, expectation_suite_name)
+```
+
+Для дальнейшей работы с GE используйте [правила](https://docs.greatexpectations.io/en/latest/reference/glossary_of_expectations.html)
+
+```python
+# используем разные expectations для создания правил по данными
+batch.expect_column_values_to_be_unique('Trip_ID')
+
+# зафиксируем правила по данным и сохраним их
+batch.save_expectation_suite(discard_failed_expectations=False)
+
+# зафиксируем время создание данного обзора
+run_id = {
+  "run_name": "bike.train.part_trip",
+  "run_time": datetime.datetime.utcnow()
+}
+results = context_ge.run_validation_operator("action_list_operator", assets_to_validate=[batch], run_id=run_id)
+
+
+# сделаем валиадацию данных
+df.tail(100).validate(expectation_suite=batch.get_expectation_suite())  #result
+
+# создаем html документацию
+context_ge.build_data_docs()
+context_ge.open_data_docs()
+```
+
+GE сделаем ваши данные:
+![](img/ge_t.jpg)
+
+
+Использование GE в Kedro
+
+```python
+def data_qual(df: pd.DataFrame):
+    """
+    Функция для тестирования данных в pipeline
+	Одна функция - одная проверка
+
+    :param df:
+    :return: df
+    """
+    df = ge.from_pandas(df)
+
+    # создаем проверку
+    result = df.expect_column_values_to_be_in_set('Subscriber_Type',
+                                                  list(df['Subscriber_Type'].unique()),)
+                                                  #mostly=.99)
+
+    if not result['success']:
+        err = result["exception_info"]
+        raise Exception(f"You get unexpected data in Subscriber_Type column\n{err}")
+
+    return df
+```
+
+Добавляем в пайплан Kedro
+
+```python
+
+# Создаем отдельный DataQuality pipeline
+checked_pipe = Pipeline([node(q.data_qual,
+                             "trip_data",
+                             "trip_data_cheked")
+                        ])
+
+    return {
+		# ставим на позицию перед основным pipeline
+        "de": checked_pipe + de_pipe,
+
+```
+
+</br>
+
+#### Feature Store
+
+Существует проблема передачи фичей для моделей между командами и DS
+
+![](img/fs1.jpg)
+
+![](img/fs2.jpg)
+
+![](img/fs3.jpg)
+
+
+</br>
+
+#### Задание для самостоятельной работы
+
+
+**Задание**
+
+![](img/hw5.jpg)
+
 
 ------------
 
