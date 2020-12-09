@@ -392,7 +392,7 @@ dvc run -n STAGE_NAME \
 
 ----------------------------
 
-Основные команды для процессинга 
+Основные команды для процессинга
 
 ```bash
 # воспроизведение процесса (повторение от шага 1 до финального)
@@ -417,7 +417,7 @@ dvc dag
 Проект является набором правил для разработки в МЛ. Но во время работы следует учитывать:
  * Не удалять (только дополнять) файл `.gitignore`
  * Работать в рамках [конвенции DE разработки](https://kedro.readthedocs.io/en/stable/12_faq/01_faq.html?highlight=convention#what-is-data-engineering-convention)
- * Переменные и конфиги эфемерные 
+ * Переменные и конфиги эфемерные
  * Конфиги в `conf/local/`
 
 ```
@@ -446,7 +446,7 @@ kedro jupyter notebook
 ![](img/struct.jpg)
 
 ```python
-# добавляем созданные pipeline 
+# добавляем созданные pipeline
 # в hook для запуска
 de_pipe = de.create_pipeline()
 ds_pipe = ds.create_pipeline()
@@ -494,7 +494,7 @@ Pipeline модели в Kedro (у данного проекта)
 
 > Зачем DS/DE знать про API?
 
-Для выполнения данной работы вам может понадобиться: сервер API, получатель API. 
+Для выполнения данной работы вам может понадобиться: сервер API, получатель API.
 Вы сможет найти их простые реализации [здесь](https://github.com/NameArtem/deployml_course/tree/main/p3_api_serv)
 
 
@@ -502,7 +502,7 @@ Pipeline модели в Kedro (у данного проекта)
 
 <a name="p3"></a>
 
-В данной работе мы сделаем выбор 1 из 3 основных реализаций API. 
+В данной работе мы сделаем выбор 1 из 3 основных реализаций API.
 
 ![](img/apis.jpg)
 
@@ -622,9 +622,9 @@ mn = st.datetimes(min_value=datetime.datetime.strptime('2019-01-01 00:00:00', '%
                  max_value=datetime.datetime.strptime('2021-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')).example()
 mx = st.datetimes(min_value=datetime.datetime.strptime('2019-01-01 00:00:00', '%Y-%m-%d %H:%M:%S'),
                  max_value=datetime.datetime.strptime('2021-01-01 00:00:00', '%Y-%m-%d %H:%M:%S')).example()
-				 
-				 
-				 
+
+
+
 # что нам нужно получить для функции
 # переменные
 mind = mn
@@ -639,7 +639,7 @@ pd.MultiIndex \
                  pd.Index(pd.date_range(mind,
                                         maxd,
                                         freq=freq))],
-                 names=[by, 
+                 names=[by,
                         newCol])
 
 # тесты
@@ -650,23 +650,219 @@ isinstance(index_creator(df, mn, mx, 'D'), pd.MultiIndex)
 # что будет в нужной структуре и не пустой индекс с уровнями, именами и определителями
 try:
     pd.testing.assert_index_equal(index_creator(df, mn, mx, 'D'),
-                                      pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []], 
+                                      pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []],
                                                                        names = ['Station', 'Datetime'],
                                                                        codes=[[], []]))
 except AssertionError:
     True
-    
+
 
 
 with pytest.raises(AssertionError):
     pd.testing.assert_index_equal(index_creator(df, mn, mx, 'D'),
-                                  pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []], 
+                                  pd.core.indexes.multi.MultiIndex(levels = [['', '0'], []],
                                                                    names = ['Station', 'Datetime'],
                                                                    codes=[[], []]))
 ```
 
 
 </br>
+
+</br>
+
+#### GitHub Actions
+
+Actions создаются в формате `YAML` и должны находится в папке `.github/workflows`.
+В Actions учавствуют следующие элементы:
+* **event** триггер к действияю
+* **machine** место, где запускается джоб
+* **The jobs** процесс выполняющий задачи
+* **The steps** задачи для джоба
+
+```yaml
+#.github/workflows/first_workflow.yml
+name: First Workflow                                               
+on: push                                                  
+jobs:                         
+  first-job:                           
+    name: Hello                         
+    runs-on: ubuntu-latest                           
+    steps:                           
+    - name: Print a greeting                             
+      run: echo Hellow!
+```
+
+**Использование Action**
+
+Action - это одна задача, которая:
+
+* Вызывается в том же репозитории, где и хранится код
+
+* Который хранится отдельным репозиторием
+
+* Который выполняется в контейнере
+
+```yaml
+# .github/workflows/first_workflow.yml
+name: First Workflow
+on: push                                                  
+jobs:                         
+  first-job:                           
+    name: Hellow                  
+    runs-on: ubuntu-latest                           
+    steps:                           
+      - name: Print a greeting                             
+        run: echo Hello!   
+
+      - name: Show ASCII greeting                             
+        uses: mscoutermarsh/ascii-art-action@master   
+        with:                               
+          text: 'HELLO!'
+```
+
+**Интеграция Python в Action**
+
+Для интеграции Python в GitHub Actions необходимо в контейнер установить Python, можно использовать специальный Action: `setup-python` и проверить доступность файлов через Action `checkout`.
+
+```yaml
+# .github/workflows/first_workflow.yml
+name: First Workflow
+on: push                                                  
+jobs:                         
+  get-posts-job:                            
+    name: Run                      
+    runs-on: ubuntu-latest     
+    steps:                             
+      - name: Check-out the repo under $GITHUB_WORKSPACE                               
+        uses: actions/checkout@v2         
+
+      - name: Set up Python 3.8                               
+        uses: actions/setup-python@v2                               
+        with:                                 
+          python-version: '3.8'          
+
+      - name: Install Scrapy                               
+        run: pip install scrapy         
+
+      - name: Run Python command                              
+        run: scrapy runspider posts_spider.py -o posts.json
+```
+
+**Получить данные из Git с помощью Actions**
+
+Ваши процессы могут возвращать результат, вы можете получать результат и скачивать его из Git с помощью Actions `upload-artifact` и `download-artifact`.
+
+```yaml
+# .github/workflows/first_workflow.yml
+name: First Workflow
+on: push                                                  
+jobs:                         
+  get-posts-job:                            
+    name: Run          
+    runs-on: ubuntu-latest     
+    steps:                             
+      - name: Check-out the repo under $GITHUB_WORKSPACE                               
+        uses: actions/checkout@v2         
+
+      - name: Set up Python 3.8                               
+        uses: actions/setup-python@v2                               
+        with:                                 
+          python-version: '3.8'          
+
+      - name: Install Scrapy                               
+        run: pip install scrapy         
+
+      - name: Run Python                              
+        run: scrapy runspider posts_spider.py -o posts.json
+
+      - name: Upload artifact                      
+        uses: actions/upload-artifact@v2                        
+        with:                                 
+          name: posts                                 
+          path: posts.json
+```
+
+**Создать Action самостоятельно**
+
+Action создается, как Docker контейнер ([про Docker](#p6)), файл с описание парсится при с помощью TypeScript.
+
+```yaml
+name: 'Любое имя для GitHub Action'
+description: 'Описание его действия, что ему нужно на вход и какой будет результат'
+inputs:
+  user:  
+    description: 'Описание входящих данных'
+    required: true
+    default: 'Что будет по умолчанию'
+runs:
+  using: "composite"
+  steps:
+    - run: команда, которая запускает процесс
+      shell: bash/ЯП
+```
+
+#### Примеры GitHub actions
+
+```yaml
+# Пример WorkFlow, который
+# запускает установку Python и зависимостей, запускает tests
+
+
+name: Tests
+# для каких действий запускать данный WorkFlow
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pytest
+```
+
+```yaml
+# Action для CodeReview
+
+name: Code review
+on:
+  push:
+  pull_request:
+jobs:
+  pycodestyle:
+    name: pycodestyle
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: wemake-python-styleguide
+      uses: wemake-services/wemake-python-styleguide@0.14.1
+      with:
+        reporter: 'github-pr-review'   # для репорта ошибок в PR комментарии
+      env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+</br>
+
 
 #### Задание для самостоятельной работы
 
@@ -686,7 +882,7 @@ with pytest.raises(AssertionError):
 
 #### Great Expectations
 
-[Great Expectations](https://docs.greatexpectations.io/en/latest/) - это специальный инструмент для тестирования данных и фиксации их профилирования. 
+[Great Expectations](https://docs.greatexpectations.io/en/latest/) - это специальный инструмент для тестирования данных и фиксации их профилирования.
 
 GE встраиватся в pipeline для тестирования входных данных.
 
@@ -812,7 +1008,11 @@ checked_pipe = Pipeline([node(q.data_qual,
 
 ![](img/fs1.jpg)
 
+Feature Store - инструмент, который получает таблицу с данными и отправляет на хранение. Имеет 2 вида объектов: ключи и данные (ввиде колонок)
+
 ![](img/fs2.jpg)
+
+Разница между DWH и Feature Store
 
 ![](img/fs3.jpg)
 
