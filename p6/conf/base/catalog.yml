@@ -1,0 +1,82 @@
+#
+
+station_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/_station_data.csv
+  load_args:
+    sep: ','
+    header: 0
+    #columns: ['Station_id', 'Station', 'Lat', 'Long', 'Dock_Count', 'City', 'Inst_date']
+
+trip_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/trip_data.csv
+  load_args:
+    sep: ','
+    header: 0
+    infer_datetime_format: True
+    dayfirst: True
+    parse_dates: ['Start_Date', 'End_Date']
+    #columns: ['Trip_ID', 'Start_Date', 'Start_Station', 'End_Date', 'End_Station', 'Subscriber_Type']
+
+weather_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/weather_data.csv
+  load_args:
+    sep: ','
+    header: 0
+    infer_datetime_format: True
+    dayfirst: True
+    parse_dates: ['Date']
+
+train_x:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/train_x.csv
+  versioned: True
+  save_args:
+    index: False
+
+test_x:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/test_x.csv
+  versioned: True
+  save_args:
+    index: False
+
+train_y:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/train_y.csv
+  versioned: True
+  save_args:
+    index: False
+
+test_y:
+  type: pandas.CSVDataSet
+  filepath: data/02_intermediate/test_y.csv
+  versioned: True
+  save_args:
+    index: False
+
+
+rf_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/rf_model
+  versioned: True
+
+predict:
+  type: pickle.PickleDataSet
+  filepath: data/07_model_output/predict
+  versioned: True
+
+metric:
+  type: text.TextDataSet
+  filepath: data/08_reporting/metric.rmse.txt
+  versioned: True
+
+api_data:
+  type: api.APIDataSet
+  url: http://89.253.237.183:9876/data
+  method: 'get'
+  headers:
+    Content-Type: application/json
+
