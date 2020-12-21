@@ -1,0 +1,22 @@
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = True
+envList = py38
+skipsdist = True
+
+[testenv]
+install_command = python -m pip install {opts} {packages}
+deps =
+    -rrequirements.txt
+setenv =
+    PYTHONPATH=.
+whitelist_externals = kedro
+commands =
+    kerdo run
+"""
+
+
+[build-system]
+requires = ["kedro==0.16.6",]
+build-backend = "kedro.run"

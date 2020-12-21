@@ -1080,9 +1080,11 @@ ENTRYPOINT [ "python" ]
 CMD [ "runner.py"] 
 ```
 
-Используейте `.dockerignore` + [GitHub Action](https://github.com/marketplace/actions/build-and-push-docker-images) для деплоя ваших разработок.
+Используейте `.dockerignore` (загружайте необходимый минимум в контейнер) + [GitHub Action](https://github.com/marketplace/actions/build-and-push-docker-images) для деплоя ваших разработок.
 
 ![](img/d_ci.jpg)
+
+</br>
 
 #### Задание для самостоятельной работы
 
@@ -1099,11 +1101,382 @@ CMD [ "runner.py"]
 
 ### AirFlow
 
->
+> Рассмотрим ETL для DE части нашей моделе. Мы не сразу используем AirFlow, а сначала посмотрим простой инструмент для ETL - Bonobo
 
 <a name="p7"></a>
 
-#### tbd
+Файл [docker-compose](p7_airflow_container/docker-compose.yml) для деплоя AirFlow + PostgreSQL в виде Docker контейнеров.
+
+В это части, мы попытаемся решить проблемы ETL процесса (и найдем инструмент, который это решит):
+
+* Масштабируемость
+
+* Работа с «неудачными» выполнениям
+
+* Мониторинг
+
+* Зависимости
+
+* Сохранение историчности
+
+
+### Простой ETL (+ bonobo)
+
+Пример Bonobo ETL для работы с HTTP API
+
+```python
+import bonobo
+import requests
+from bonobo.config import use_context_processor
+from bonobo.config import use
+
+# используем http из bonobo
+@use('http')
+def extract(http):
+    """
+        Получаем данные с сервиса
+    """
+    yield from http.get('http://IP:9876/data').json().get('data')
+
+
+def get_services():
+    """
+       Указываем тип сервиса
+    """
+    http = requests.Session()
+    return {
+        'http': http
+    }    
+    
+    
+def with_opened_file(self, context):
+    """
+        Файл для записи результатов
+    """
+    with open('output.txt', 'w+',  encoding='utf-8') as f:
+        yield f
+
+# на основе контекста, который работыет с файлом
+# мы создаем контролиремый процесс записи
+@use_context_processor(with_opened_file)
+def write_repr_to_file(f, *row):
+    """
+       Записываем все полученные строки в файл
+    """
+    f.write(repr(row) + "\n")
+
+
+def get_graph(**options):
+    """
+       создаем граф выполнения
+    """
+    
+    graph = bonobo.Graph()
+    
+    graph.add_chain(
+        extract,
+        write_repr_to_file,
+    )
+    return graph
+
+
+# выполним и посмотрим на результат
+bonobo.run(get_graph(), services=get_services())
+```
+
+#### Bonobo + Kedro 
+
+```python
+from kedro.context import load_context
+from kedro.extras.datasets.api import APIDataSet
+
+def kedro_de_pipeline():
+    """
+        подключаем нужный pipeline
+    """
+    context = load_context("../")
+    context.run(pipeline_name='de')
+
+def get_graph(**options):
+    """
+       создаем граф выполнения
+    """
+    
+    graph = bonobo.Graph()
+    
+    graph.add_chain(
+        kedro_de_pipeline        
+    )
+    return graph
+
+bonobo.run(get_graph())
+```
+
+### ETL на AirFlow
+
+AirFlow является отличным решением для сложных задач, этот инструмент решает ETL проблемы и имеет следующие приемущества:
+
+* наличие наглядного веб-GUI для визуализации конвейеров обработки данных
+
+* есть scheduler (у остальных, только cron)
+
+* пакетный характер работы с данными (batch processing)
+
+* популярность в области Big Data(много контекстов для BigData решений)
+
+* есть историчность данных
+
+* есть общее хранилище для переменных и параметров
+
+* есть сенсоры, которые могут управлять DAG
+
+AirFlow имеет набор приемуществ, которые позволяеют ему реализовывать:
+
+- **Sensors (на [git](https://github.com/apache/airflow/tree/master/airflow/sensors)):**
+    * HdsfSensor - ожидает появления нового файла в таблице Hadoop
+    * NamedHivePartitionSensor - проверяет доступность партиций в Hive таблице
+    * DateTime / TimeDelta- зависимость от времени
+    * Filesystem / FileSensor - если появился новый файл в заданной директории
+    * Python - если какой-нибудь(указаный в условиях) python файл вернул True
+
+**!NB** Вы всегда можете добавить свой собственный сенсор:
+```python
+from airflow.sensors.base import BaseSensorOperator
+
+class MySensor(BaseSensorOperator):
+    
+    @apply_defaults
+    def __init__(self, *, параметры для данного сенсор, **kwargs):
+        super().__init__(**kwargs)
+        ...
+
+    def poke(self, context):
+        ...
+    
+```
+
+---------------------------------------------------------------------------------------
+
+ 
+- **Operators (на [git](https://github.com/apache/airflow/tree/master/airflow/operators)):**
+    * BashOperator
+    * PythonOperator
+    * HiveOperator
+    * HttpOperator
+    * Postgres/MySqlOperator
+    * SubDag
+    
+**!NB** Вы всегда можете добавить свой собственный оператор:
+```python
+from airflow.models import BaseOperator
+
+class MyBestOperator(BaseOperator):
+    
+    @apply_defaults
+    def __init__(self, *, параметры для данного оператора, **kwargs):
+        super().__init__(**kwargs)
+        ...
+        
+    def execute(self, context):
+        ...
+```
+
+---------------------------------------------------------------------------------------
+    
+- **Transfers:**
+    * MySql/PostgresToHiveTransfes
+
+
+---------------------------------------------------------------------------------------
+
+Рассмотрим пример:
+
+```python
+# Шаг 1
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.python_operator import PythonOperator
+
+# + создаем функции
+def my_func():
+    return "Dream func - Всё необходимое в одной функции"
+
+
+# установка Apache Airflow Variables 
+# /admin/variable/ -> Create new | или загрузить json с переменными
+AUTHOR = Variable.get("desc_dict", deserialize_json=True)['dml']['author']
+
+
+
+# Шаг 2 (аргументы)
+default_args = {
+    "owner": "airflow",
+    "depends_on_past": False,              # зависимость от прошлого результата
+    "start_date": datetime(2020, 12, 21),  # первая дата выполнения -> airflow.utils.dates.days_ago(#)
+    # "end_date":                          # последняя дата (выполнять до)
+    "retries": 1,                          # повторных запусков
+    "retry_delay": timedelta(minutes=2),   # повторный запуск через кол-во минут
+    # email | email_on_failure | email_on_retry 
+    # 'queue': 'bash_queue',
+    # 'pool': 'backfill',
+    # 'priority_weight': 10,
+    # 'wait_for_downstream': False,
+    # 'dag': dag,
+    # 'sla': timedelta(hours=2),
+    # 'execution_timeout': timedelta(seconds=300),
+    # 'on_failure_callback': some_function,
+    # 'on_success_callback': some_other_function,
+    # 'on_retry_callback': another_function,
+    # 'sla_miss_callback': yet_another_function,
+    # 'trigger_rule': 'all_success'
+}
+
+
+# Шаг 3 (описание)
+dag = DAG(
+    "steps_in_DAG",                          # имя процесса
+    description="Все шаги для создания DAG", # описание
+    schedule_interval="0 0 * * *",           # аналогично, как в cron
+    default_args=default_args,
+    catchup=False                            # catchup - концепция
+    
+    # catchup - DAG разбивается на шаги, каждый шаг - это отдельный запуск. 
+    # При параметре True, DAG будет выполнятся по отдельности, без очередности (каждый шаг в разный момент)
+)
+
+
+# Шаг 4
+task1 = DummyOperator(task_id="dummy_task",
+                      retries=3,
+                      dag=dag)
+
+
+# Документирование каждого задани
+task1.doc_md = """
+# Task 1
+
+Здес описано задание 1 для Apache Airflow
+"""
+
+dag.doc_md = __doc_
+
+
+task2 = PythonOperator(task_id="my_func_task",
+                       python_callable=my_func,
+                       dag=dag)
+
+
+# можно добавить визуальный шаблон
+templated_command = """
+echo "{{ var.value.AUTHOR }}"
+echo "{{ params.best_param }}"
+"""
+
+task3 = BashOperator(
+    task_id='templated',
+    depends_on_past=False,
+    bash_command=templated_command,
+    params={'best_param': 'О, да! Ты подобрал лучшие параметры'},
+    dag=dag,
+)
+
+
+
+# Шаг 5 (установка последовательности)
+# установка последовательности
+task1 >> task2 >> task3
+
+# равнозначно
+# task2.set_upstream(task1)
+
+# task1.set_downstream([task2, task3])
+# task1 >> [task2, task3]
+
+# в обратном порядке
+# [task2, task3] << task1
+```
+
+#### AirFlow + Kedro
+
+```python
+import sys
+from datetime import datetime, timedelta
+
+from airflow import DAG
+from kedro_airflow.runner import AirflowRunner
+from kedro.framework.context import load_context
+
+
+# Установка аргументов
+default_args = {
+    "owner": "kedro",
+    "start_date": datetime(2020, 12, 21),
+    "depends_on_past": False,
+    "wait_for_downstream": True,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=10),
+}
+
+
+# Функция создания контекста и определения pipeline для запуска
+def process_context(data_catalog, **airflow_context):
+    
+    for key in ["dag", "conf", "macros", "task", "task_instance", "ti", "var"]:
+        del airflow_context[key]
+        
+    data_catalog.add_feed_dict({"airflow_context": airflow_context}, replace=True)
+
+    parameters = data_catalog.load("parameters")
+    parameters["airflow_de_pipeline"] = airflow_context["de"]
+    data_catalog.save("parameters", parameters)
+
+    return data_catalog
+
+
+# Создаем DAG для Kedro
+dag = DAG(
+    "bike",
+    description="DE pipeline для bike модели",
+    default_args=default_args,
+    schedule_interval=None,
+    catchup=False
+)
+
+
+# загружаем контекст kedro (как обычно, как в Bonobo)
+_context = load_context("")
+data_catalog = _context.catalog
+pipeline = _context.pipeline
+
+# создаем airflow процесс
+runner = AirflowRunner(
+                       dag=dag,
+                       process_context=process_context,
+                       operator_arguments=dict(),
+                       )
+
+# инит процесса == task1 >> task2 >> ...
+runner.run(pipeline, data_catalog)	
+```
+
+**kedro может больше, kedro сам может создать себе готовый код для airflow**:
+
+```bash
+# наберите в командной строке, там где у вас расположен проект 
+kedro airflow create
+```
+
+
+</br>
+
+#### Задание для самостоятельной работы
+
+
+**Задание**
+
+![](img/hw7.jpg)
 
 <br>
 
