@@ -9,7 +9,7 @@
 * [СI/CD](#p4)
 * [Feature Store](#p5)
 * [Docker](#p6)
-* [Часть 7](#p7)
+* [AirFlow](#p7)
 * [Часть 8](#p8)
 
 <br>
@@ -1032,9 +1032,57 @@ Feature Store - инструмент, который получает табли
 
 ### Docker 
 
->
+> В этой части я попытался ответить на вопрос: "Нужен ли Docker для DS/DE?". Это отличное решение для изоляции разработок и мгновенной передачи в прод.. 
+> Выбранные решения на базе Kedro + GitHub + GitHub Action позволяют пронести процесс от разработки до готового контейнера
 
 <a name="p6"></a>
+
+![](img/d1.jpg)
+
+Формируем Docker контейнер на базе файла Dockerfile:
+
+- FROM - на какой базе 
+- ENV - установка окружения
+- WORKDIR – создание директории для работы
+- COPY / ADD– копируем с «машины» в Docker контейнер
+- RUN - первые команды в Shell (выполнено / установлено)
+- EXPOSE - указание портов
+- CMD / ENTRYPOIN - что запустить в докере [команда, параметры,,,] 
+
+Пример:
+
+```yaml
+FROM python:3.7
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update \
+    && apt-get -y install gcc make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir --upgrade pip
+
+WORKDIR /model
+
+# copy requirements.txt
+COPY deployml_course/requirements.txt /model/requirements.txt
+
+# install project requirements
+RUN pip install --no-cache-dir -r requirements.txt
+
+# copy project
+COPY deployml_course/ /model
+
+EXPOSE 6789
+
+ENTRYPOINT [ "python" ]
+CMD [ "runner.py"] 
+```
+
+Используейте `.dockerignore` + [GitHub Action](https://github.com/marketplace/actions/build-and-push-docker-images) для деплоя ваших разработок.
+
+![](img/d_ci.jpg)
 
 #### Задание для самостоятельной работы
 
@@ -1049,7 +1097,7 @@ Feature Store - инструмент, который получает табли
 ------------
 
 
-### Часть 7
+### AirFlow
 
 >
 
