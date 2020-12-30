@@ -10,7 +10,7 @@
 * [Feature Store](#p5)
 * [Docker](#p6)
 * [AirFlow](#p7)
-* [Часть 8](#p8)
+* [Мониторинг](#p8)
 
 <br>
 
@@ -1483,14 +1483,231 @@ kedro airflow create
 ------------
 
 
-### Часть 8
+### Мониторинг
 
->
+> Метрик много, но какие выбрать для мониторинга за моделью, а какие принять для определения качества моделей?
+
+![](img/metrics1.jpg)
 
 <a name="p8"></a>
 
-#### tbd
+Не достаточно смотреть на кривые и площади под ними.  Но можно с этого начать
+
+</br>
+
+**Для классификации**
+
+![](img/roc.jpg)
+
+![](img/roc2.jpg)
+
+![](img/metrics_auc.jpg)
+
+</br>
+
+**Для регрессии**
+
+![](img/metrics_regr.jpg)
+
+![](img/metrics_r.jpg)
+
+</br>
+
+**Не забудьте проверить входные параметры для модели**
+
+Самый эффективный способ - это следить за стабильностью данных, т.е. использовать [PSI - population stability index](https://wiki.loginom.ru/articles/stability-index.html)
+
+![](img/psi.jpg)
+
+![](img/conc1.jpg)
+
+Результат при изменении данных
+
+![](img/conc2.jpg)
 
 <br>
 
-------------
+#### Мониторинг в прод
+
+Метрики для Model Quality не всегда подохят для мониторинга в работе.
+
+Разберем пример на примере MCC
+
+![](img/metrics_mcc.jpg)
+
+И сравним его результаты с  F1 для бинарной классификации
+
+![](img/mmc_1.jpg)
+
+![](img/mmc_2.jpg)
+
+<br>
+
+#### AB Test
+
+Рассмотрим 2 варианта АБ тестирования:
+
+- новую модель со старой моделью
+
+- все модели со всеми
+
+** Новая модель соревнуется со старой**
+
+<noscript>
+
+<div id="noscript">Jupyter Notebook requires JavaScript.  
+Please enable it to proceed.</div>
+
+</noscript>
+
+<div id="header" role="navigation" aria-label="Top Menu">
+
+<div id="header-container" class="container">
+
+<div id="ipython_notebook" class="nav navbar-brand">[![Jupyter Notebook](/static/base/images/logo.png?v=641991992878ee24c6f3826e81054a0f)](/tree?token=207c16dbbb2562ec1a08f524809bfd2decb23b8487c66bf7 "dashboard")</div>
+
+<span id="save_widget" class="save_widget"><span id="notebook_name" class="filename"></span><span class="checkpoint_status"></span><span class="autosave_status"></span></span><span id="kernel_logo_widget">![Current Kernel Logo](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7) </span> <span id="login_widget"><button id="logout" class="btn btn-sm navbar-btn">Logout</button></span> </div>
+
+<div id="menubar-container" class="container">
+
+<div id="menubar">
+
+<div id="menus" class="navbar navbar-default" role="navigation">
+
+<div class="container-fluid"><button type="button" class="btn btn-default navbar-btn navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"><span class="navbar-text">Menu</span></button>
+
+<span class="kernel_indicator_name">Kernel</span>
+
+_<span class="fa-stack"></span>_<span id="notification_area"></span>
+
+<div class="navbar-collapse collapse">
+
+*   [File](#)
+    *   [New Notebook<span class="sr-only">Toggle Dropdown</span>](#)
+    *   [Open...](#)
+
+    *   [Make a Copy...](#)
+    *   [Save as...](#)
+    *   [Rename...](#)
+    *   [Save and Checkpoint](#)
+
+    *   [Revert to Checkpoint<span class="sr-only">Toggle Dropdown</span>](#)
+        *   [](#)
+        *   [](#)
+        *   [](#)
+        *   [](#)
+        *   [](#)
+
+    *   [Print Preview](#)
+    *   [Download as<span class="sr-only">Toggle Dropdown</span>](#)
+        *   [AsciiDoc (.asciidoc)](#)
+        *   [HTML (.html)](#)
+        *   [LaTeX (.tex)](#)
+        *   [Markdown (.md)](#)
+        *   [Notebook (.ipynb)](#)
+        *   [PDF via LaTeX (.pdf)](#)
+        *   [reST (.rst)](#)
+        *   [Script (.txt)](#)
+        *   [Reveal.js slides (.slides.html)](#)
+    *   [Deploy as](#)
+
+    *   [Trust Notebook](#)
+
+    *   [Close and Halt](#)
+*   [Edit](#)
+    *   [Cut Cells](#)
+    *   [Copy Cells](#)
+    *   [Paste Cells Above](#)
+    *   [Paste Cells Below](#)
+    *   [Paste Cells & Replace](#)
+    *   [Delete Cells](#)
+    *   [Undo Delete Cells](#)
+
+    *   [Split Cell](#)
+    *   [Merge Cell Above](#)
+    *   [Merge Cell Below](#)
+
+    *   [Move Cell Up](#)
+    *   [Move Cell Down](#)
+
+    *   [Edit Notebook Metadata](#)
+
+    *   [Find and Replace](#)
+
+    *   [Cut Cell Attachments](#)
+    *   [Copy Cell Attachments](#)
+    *   [Paste Cell Attachments](#)
+
+    *   [Insert Image](#)
+*   [View](#)
+    *   [Toggle Header](#)
+    *   [Toggle Toolbar](#)
+    *   [Toggle Line Numbers](#)
+    *   [Cell Toolbar](#)
+*   [Insert](#)
+    *   [Insert Cell Above](#)
+    *   [Insert Cell Below](#)
+*   [Cell](#)
+    *   [Run Cells](#)
+    *   [Run Cells and Select Below](#)
+    *   [Run Cells and Insert Below](#)
+    *   [Run All](#)
+    *   [Run All Above](#)
+    *   [Run All Below](#)
+
+    *   [Cell Type](#)
+        *   [Code](#)
+        *   [Markdown](#)
+        *   [Raw NBConvert](#)
+
+    *   [Current Outputs](#)
+        *   [Toggle](#)
+        *   [Toggle Scrolling](#)
+        *   [Clear](#)
+    *   [All Output](#)
+        *   [Toggle](#)
+        *   [Toggle Scrolling](#)
+        *   [Clear](#)
+*   [Kernel](#)
+    *   [Interrupt](#)
+    *   [Restart](#)
+    *   [Restart & Clear Output](#)
+    *   [Restart & Run All](#)
+    *   [Reconnect](#)
+    *   [Shutdown](#)
+
+    *   [Change kernel](#)
+*   [Help](#)
+    *   [User Interface Tour](#)
+    *   [Keyboard Shortcuts](#)
+    *   [Edit Keyboard Shortcuts](#)
+
+    *   [Notebook Help](http://nbviewer.jupyter.org/github/ipython/ipython/blob/3.x/examples/Notebook/Index.ipynb "Opens in a new window")
+    *   [Markdown](https://help.github.com/articles/markdown-basics/ "Opens in a new window")
+
+    *   [About](#)
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script type="text/javascript">sys_info = {"notebook_version": "6.0.3", "notebook_path": "D:\\installprogramm\\Anaconda3\\lib\\site-packages\\notebook", "commit_source": "", "commit_hash": "", "sys_version": "3.7.6 (default, Jan 8 2020, 20:23:39) [MSC v.1916 64 bit (AMD64)]", "sys_executable": "D:\\installprogramm\\Anaconda3\\python.exe", "sys_platform": "win32", "platform": "Windows-10-10.0.18362-SP0", "os_name": "nt", "default_encoding": "utf-8"};</script> <script type="text/javascript">function _remove_token_from_url() { if (window.location.search.length <= 1) { return; } var search_parameters = window.location.search.slice(1).split('&'); for (var i = 0; i < search_parameters.length; i++) { if (search_parameters[i].split('=')[0] === 'token') { // remote token from search parameters search_parameters.splice(i, 1); var new_search = ''; if (search_parameters.length) { new_search = '?' + search_parameters.join('&'); } var new_url = window.location.origin + window.location.pathname + new_search + window.location.hash; window.history.replaceState({}, "", new_url); return; } } } _remove_token_from_url();</script>
+
+-----------
+
+#### Спасибо!
+
+![](img/fin.jpg)
+
+
+#### Оставьте обратную связь
+
+[Ссылка](https://forms.gle/tjVHYVzB258bAj9n6) на форму обратной связи
