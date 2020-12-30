@@ -1582,9 +1582,9 @@ color_hex_list = ['#88CCEE', '#CC6677', '#DDCC77', '#117733', '#332288', '#E5860
 
 ---
 
-# НАСТРОЙКИ ДО ТЕСТА
+##### НАСТРОЙКИ ДО ТЕСТА
 
-## Размер группы
+##### Размер группы
 
 Если вы не хотите считать сами, воспользуйтесь готовы решением на сайте: [ссылка](https://www.evanmiller.org/ab-testing/sample-size.html)
 
@@ -1600,7 +1600,7 @@ effectSize = 0.01
 one_sided = True 
 ```
 
-#### Рассчитаем стартовые данные 
+##### Рассчитаем стартовые данные 
 
 
 ```python
@@ -1623,7 +1623,7 @@ print('Effect Size (E) = ', effectSize*100, '%')
     Effect Size (E) =  1.0 %
     
 
-#### Функция установки "траффика", который будет проходить через модель
+##### Функция установки "траффика", который будет проходить через модель
 
 
 ```python
@@ -1642,7 +1642,7 @@ print('Sample Size (per variation)=',round(n,0))
     Sample Size (per variation)= 11129.0
     
 
-## Определяем минимальный значимый эффект
+##### Определяем минимальный значимый эффект
 
 - расчет на основе alpha / beta / размер группы
 - для обнаружения минимального эффекта, мы должны заранее определить размер группы (максимальный)
@@ -1662,19 +1662,14 @@ def measurable_effect_size(n, za, zb, pr):
 measurable_effect_size(n, alpha_Zscore, beta_Zscore, baseline_probability)
 ```
 
-
-
-
     0.01
 
 
-
-## Alpha Cutoff 
+##### Alpha Cutoff 
 
 Сделаем обработку параметра Alpha на количество ожидаемых значений (для классификации), важно для ошибки первого рода. 
 
 Мы считаем - Familywise Error Rate (Alpha Inflation)
-
 
 ```python
 # количество сегментов для сравнения (кол-во значений в таргите)
@@ -1688,13 +1683,7 @@ segments = 2
 1 - (1-alpha)**segments
 ```
 
-
-
-
     0.09750000000000003
-
-
-
 
 ```python
 print("Допустимые коррекции:")
@@ -1708,10 +1697,9 @@ print("However, this adjustment may be too conservative.")
     Гарантированная ошибка 1 типа не будет привышать α = 0.098
     However, this adjustment may be too conservative.
     
-
 ---
 
-## Данные
+##### Данные
 
 Для теста надо иметь в данных следующее:
 
@@ -1745,9 +1733,6 @@ segment_list = list(df[segment_label].unique())
 
 df.head()
 ```
-
-
-
 
 <div>
 <style scoped>
@@ -1855,10 +1840,7 @@ df.head()
 </table>
 </div>
 
-
-
-#### Обзор сегментов
-
+##### Обзор сегментов
 
 ```python
 variations = len(segment_list)
@@ -1870,7 +1852,7 @@ print('Number of segments: ', variations)
     Number of segments:  2
     
 
-### Траффик по дням
+##### Траффик по дням
 
 
 ```python
@@ -1878,7 +1860,6 @@ print('Number of segments: ', variations)
 daily_users = pd.DataFrame(d2.groupby(date_label)[user_label].nunique()).reset_index()
 daily_traffic = pd.DataFrame(d2.groupby(date_label)[traffic_label].sum()).reset_index()
 daily_conversions = pd.DataFrame(d2.groupby(date_label)[conversion_label].sum()).reset_index()
-
 
 # Визуализируем
 plt.subplots(figsize=(13, 6))
@@ -1893,9 +1874,7 @@ plt.legend(fontsize=15)
 plt.show()
 ```
 
-
-![png](output_22_0.png)
-
+![png](img/output_22_0.png)
 
 
 ```python
@@ -1903,40 +1882,23 @@ plt.show()
 round((daily_conversions[conversion_label]/daily_traffic[traffic_label]).mean()*100,2)
 ```
 
-
-
-
     40.43
-
-
-
 
 ```python
 # Average Traffic / User
 round((daily_traffic[traffic_label]/daily_users[user_label]).mean(),2)
 ```
 
-
-
-
     0.96
-
-
-
 
 ```python
 # Average Conversions / User
 round((daily_conversions[conversion_label]/daily_users[user_label]).mean(),2)
 ```
 
-
-
-
     0.39
 
-
-
-### Таблица сегментов
+##### Таблица сегментов
 
 
 ```python
@@ -1963,9 +1925,6 @@ dfp_simple
 
 #dfp = dfp_simple.copy().sort_index()
 ```
-
-
-
 
 <div>
 <style scoped>
@@ -2005,8 +1964,6 @@ dfp_simple
 </div>
 
 
-
-
 ```python
 dfp = dfp_simple.copy().sort_index()
 
@@ -2029,8 +1986,6 @@ dfp['population_percentage'] = dfp['traffic']/n
 
 dfp
 ```
-
-
 
 
 <div>
@@ -2093,7 +2048,7 @@ dfp
 
 
 
-### Plot
+##### Plot
 
 
 ```python
@@ -2115,29 +2070,26 @@ plt.show()
 ```
 
 
-![png](output_30_0.png)
+![png](img/output_30_0.png)
 
 
-# ТЕСТИРОВАНИЕ МОДЕЛИ ЛОКАЛЬНО
+##### ТЕСТИРОВАНИЕ МОДЕЛИ ЛОКАЛЬНО
 
-## 2 Sample
+##### 2 Sample
 
 *Тип теста: z-test*
-
 
 - H0: Нет разницы между сегментами и уровнем конверсии
 - H1: Есть разница между сегментами и уровнем конверсии
 
 !-> A1 - основная, старая модель, все остальные это новые "челленджеры"
 
-
 ```python
 variation1 = 'A1'
 variation2 = 'A2'
 ```
 
-### Расчет параметров по каждому сегменту
-
+##### Расчет параметров по каждому сегменту
 
 ```python
 x1 = dfp.loc[variation1]['converted']
@@ -2156,8 +2108,7 @@ print(variation2, 'Traffic:', n2)
     A2 Converted: 37.0
     A2 Traffic: 88.0
     
-
-### Сравнение результатов
+##### Сравнение результатов
 
 
 ```python
@@ -2196,7 +2147,7 @@ print('p-value: {p}'.format(p=pvalue))
     p-value: 0.184154235386902
     
 
-### Фиксирование разниц
+##### Фиксирование разниц
 
 
 ```python
@@ -2241,7 +2192,7 @@ else:
     Да, мы должны получить больше данных для определения значимости изменений
     
 
-####  Интерпритация результатов
+#####  Интерпритация результатов
 
 ! -> Только, если больше не нужно больше данных
 
@@ -2259,7 +2210,7 @@ else:
     Нет, 0-гипотеза не может быть отвергнута
     
 
-### Доверительный интервал - для эффективного размера группы
+##### Доверительный интервал - для эффективного размера группы
 
 
 ```python
@@ -2277,7 +2228,7 @@ print(' 95% Confidence Interval = ( {0:.2f}% , {1:.2f}% )'
      95% Confidence Interval = ( -19.21% , 5.63% )
     
 
-### Stats Model Formula
+##### Stats Model Formula
 
 2х хвостовой тест
 
@@ -2295,7 +2246,7 @@ print('p-value: {0:.8f}'.format(pval))
     p-value: 0.00000181
     
 
-#### Extra
+##### Extra
 
 
 ```python
@@ -2319,7 +2270,7 @@ print('p-value: {p}'.format(p=pvalue))
     p-value: 0.184154235386902
     
 
-## 2+ Sample Proportion
+##### 2+ Sample Proportion
 
 *Тип теста: Chi Square*
 
@@ -2328,7 +2279,7 @@ print('p-value: {p}'.format(p=pvalue))
 - H0: Нет разницы между сегментами и уровнем конверсии
 - H1: Есть разница между сегментами и уровнем конверсии 
 
-### Main Question: 
+##### Main Question: 
 
 Есть разница между моделями (сегментами)? 
 
@@ -2378,9 +2329,6 @@ n = dfp.loc['Total']['traffic']
 dfp['population_percentage'] = dfp['traffic']/n
 dfp
 ```
-
-
-
 
 <div>
 <style scoped>
@@ -2459,14 +2407,10 @@ dfp
 </div>
 
 
-
-
 ```python
 dfpTo = dfp[['converted', 'not_converted', 'traffic']].T
 dfpTo
 ```
-
-
 
 
 <div>
@@ -2525,7 +2469,7 @@ dfpTo
 
 
 
-### % пропорций (вероятности)
+##### % пропорций (вероятности)
 
 
 ```python
@@ -2537,7 +2481,7 @@ for i in range(variations):
         dfpTe.iloc[j,i] = (dfpTo.loc['traffic'][i]*dfpTo['Total'][j])/n
 ```
 
-### Chi Square / p-value
+##### Chi Square / p-value
 
 
 ```python
@@ -2549,13 +2493,7 @@ ch2 = ss.values.sum()
 ch2
 ```
 
-
-
-
     1.9666036399234188
-
-
-
 
 ```python
 # P-value (степень свободы - 1)
@@ -2563,14 +2501,9 @@ pvalue_chi = 1 - stats.chi2.cdf(ch2, variations-1)
 pvalue_chi
 ```
 
-
-
-
     0.5793670974852936
 
-
-
-#### Интерпретация результатов
+##### Интерпретация результатов
 
 
 ```python
@@ -2588,10 +2521,11 @@ else:
 
 ---
 
-### Main Question: 
+##### Main Question: 
+
 Какая модель (сегмент) лучше?
 
-### Marascuilo Procedure (аналог Tukey-Kramer Test)
+##### Marascuilo Procedure (аналог Tukey-Kramer Test)
 
 О тесте: [ссылка](https://www.itl.nist.gov/div898/handbook/prc/section4/prc474.htm)
 
@@ -2662,7 +2596,7 @@ dfm = pd.DataFrame({
 })
 ```
 
-### Определим значимость
+##### Определим значимость
 
 Необходимые переменные:
 - alpha 
@@ -2685,9 +2619,6 @@ column_order = ['segment1', 'proportion1', 'segment2', 'proportion2', 'diff', 's
 # сортировка по наибольшему стат.эффекту
 dfm[column_order].sort_values(['diff', 'signficant_effect_size'], ascending = [False, True])
 ```
-
-
-
 
 <div>
 <style scoped>
@@ -2797,7 +2728,7 @@ dfm[column_order].sort_values(['diff', 'signficant_effect_size'], ascending = [F
 
 
 
-### Какая модель имеет статистическую значимость?
+##### Какая модель имеет статистическую значимость?
 
 
 ```python
@@ -2838,7 +2769,7 @@ dfm[dfm['signficant_effect_size'] == True][['segment1', 'segment2']]
 
 ---
 
-#### Вывод: 
+##### Вывод: 
 
 Все новые модели не имееют значительного улучшения и не могут быть приняты. 
 
