@@ -1551,155 +1551,1299 @@ kedro airflow create
 
 - все модели со всеми
 
-** Новая модель соревнуется со старой**
+```python
+import pandas as pd
+%matplotlib inline
 
-<noscript>
+import math
+import scipy.stats as stats
 
-<div id="noscript">Jupyter Notebook requires JavaScript.  
-Please enable it to proceed.</div>
+import numpy as np
+import matplotlib.pyplot as plt
 
-</noscript>
+from statsmodels.stats.proportion import proportions_ztest
+from statsmodels.stats.proportion import proportions_chisquare
 
-<div id="header" role="navigation" aria-label="Top Menu">
+import seaborn as sns
+sns.set(color_codes=True)
 
-<div id="header-container" class="container">
+from datetime import timedelta
+import datetime
+import time
+import os
+```
 
-<div id="ipython_notebook" class="nav navbar-brand">[![Jupyter Notebook](/static/base/images/logo.png?v=641991992878ee24c6f3826e81054a0f)](/tree?token=207c16dbbb2562ec1a08f524809bfd2decb23b8487c66bf7 "dashboard")</div>
 
-<span id="save_widget" class="save_widget"><span id="notebook_name" class="filename"></span><span class="checkpoint_status"></span><span class="autosave_status"></span></span><span id="kernel_logo_widget">![Current Kernel Logo](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7) </span> <span id="login_widget"><button id="logout" class="btn btn-sm navbar-btn">Logout</button></span> </div>
+```python
+# Цвета для виз
+color_hex_list = ['#88CCEE', '#CC6677', '#DDCC77', '#117733', '#332288', '#E58606',  '#999933', '#882255', '#661100', 
+ '#5D69B1', '#52BCA3', '#99C945', '#CC61B0', '#24796C', '#DAA51B', '#2F8AC4', '#764E9F', '#ED645A']
+```
 
-<div id="menubar-container" class="container">
+---
 
-<div id="menubar">
+# НАСТРОЙКИ ДО ТЕСТА
 
-<div id="menus" class="navbar navbar-default" role="navigation">
+## Размер группы
 
-<div class="container-fluid"><button type="button" class="btn btn-default navbar-btn navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"><span class="navbar-text">Menu</span></button>
+Если вы не хотите считать сами, воспользуйтесь готовы решением на сайте: [ссылка](https://www.evanmiller.org/ab-testing/sample-size.html)
 
-<span class="kernel_indicator_name">Kernel</span>
 
-_<span class="fa-stack"></span>_<span id="notification_area"></span>
+```python
+# установка базовых переменных
+baseline_probability = 0.10
+beta = 0.2
+alpha = 0.05
+effectSize = 0.01
 
-<div class="navbar-collapse collapse">
+# определяем one-side или two-side тест
+one_sided = True 
+```
 
-*   [File](#)
-    *   [New Notebook<span class="sr-only">Toggle Dropdown</span>](#)
-    *   [Open...](#)
+#### Рассчитаем стартовые данные 
 
-    *   [Make a Copy...](#)
-    *   [Save as...](#)
-    *   [Rename...](#)
-    *   [Save and Checkpoint](#)
 
-    *   [Revert to Checkpoint<span class="sr-only">Toggle Dropdown</span>](#)
-        *   [](#)
-        *   [](#)
-        *   [](#)
-        *   [](#)
-        *   [](#)
+```python
+alpha_Zscore = stats.norm.ppf(1-alpha*(1-0.5*(1-one_sided)))
+beta_Zscore = stats.norm.ppf(1-beta)
 
-    *   [Print Preview](#)
-    *   [Download as<span class="sr-only">Toggle Dropdown</span>](#)
-        *   [AsciiDoc (.asciidoc)](#)
-        *   [HTML (.html)](#)
-        *   [LaTeX (.tex)](#)
-        *   [Markdown (.md)](#)
-        *   [Notebook (.ipynb)](#)
-        *   [PDF via LaTeX (.pdf)](#)
-        *   [reST (.rst)](#)
-        *   [Script (.txt)](#)
-        *   [Reveal.js slides (.slides.html)](#)
-    *   [Deploy as](#)
+print('Baseline Conversion (pr) = ', baseline_probability*100, '%')
+print('Confidence Level = ', (1-alpha)*100, '%')
+print('Alpha Z-score (za) = ', round(alpha_Zscore,2))
+print('Power = ', (1-beta)*100, '%')
+print('Beta Z-score (zb) = ', round(beta_Zscore,2))
+print('Effect Size (E) = ', effectSize*100, '%')
+```
 
-    *   [Trust Notebook](#)
+    Baseline Conversion (pr) =  10.0 %
+    Confidence Level =  95.0 %
+    Alpha Z-score (za) =  1.64
+    Power =  80.0 %
+    Beta Z-score (zb) =  0.84
+    Effect Size (E) =  1.0 %
+    
 
-    *   [Close and Halt](#)
-*   [Edit](#)
-    *   [Cut Cells](#)
-    *   [Copy Cells](#)
-    *   [Paste Cells Above](#)
-    *   [Paste Cells Below](#)
-    *   [Paste Cells & Replace](#)
-    *   [Delete Cells](#)
-    *   [Undo Delete Cells](#)
+#### Функция установки "траффика", который будет проходить через модель
 
-    *   [Split Cell](#)
-    *   [Merge Cell Above](#)
-    *   [Merge Cell Below](#)
 
-    *   [Move Cell Up](#)
-    *   [Move Cell Down](#)
+```python
+def sample_size(E, za, zb, pr):
+    variance = pr*(1-pr)  # эту часть можно заменить на baseline по модели
+    z = (za+zb)**2
+    top = 2*variance*z
+    bottom = E**2
+    n = top/bottom
+    return n
 
-    *   [Edit Notebook Metadata](#)
+n = sample_size(effectSize, alpha_Zscore, beta_Zscore, baseline_probability)
+print('Sample Size (per variation)=',round(n,0))
+```
 
-    *   [Find and Replace](#)
+    Sample Size (per variation)= 11129.0
+    
 
-    *   [Cut Cell Attachments](#)
-    *   [Copy Cell Attachments](#)
-    *   [Paste Cell Attachments](#)
+## Определяем минимальный значимый эффект
 
-    *   [Insert Image](#)
-*   [View](#)
-    *   [Toggle Header](#)
-    *   [Toggle Toolbar](#)
-    *   [Toggle Line Numbers](#)
-    *   [Cell Toolbar](#)
-*   [Insert](#)
-    *   [Insert Cell Above](#)
-    *   [Insert Cell Below](#)
-*   [Cell](#)
-    *   [Run Cells](#)
-    *   [Run Cells and Select Below](#)
-    *   [Run Cells and Insert Below](#)
-    *   [Run All](#)
-    *   [Run All Above](#)
-    *   [Run All Below](#)
+- расчет на основе alpha / beta / размер группы
+- для обнаружения минимального эффекта, мы должны заранее определить размер группы (максимальный)
 
-    *   [Cell Type](#)
-        *   [Code](#)
-        *   [Markdown](#)
-        *   [Raw NBConvert](#)
 
-    *   [Current Outputs](#)
-        *   [Toggle](#)
-        *   [Toggle Scrolling](#)
-        *   [Clear](#)
-    *   [All Output](#)
-        *   [Toggle](#)
-        *   [Toggle Scrolling](#)
-        *   [Clear](#)
-*   [Kernel](#)
-    *   [Interrupt](#)
-    *   [Restart](#)
-    *   [Restart & Clear Output](#)
-    *   [Restart & Run All](#)
-    *   [Reconnect](#)
-    *   [Shutdown](#)
+```python
+# функция оценки эффекта
+def measurable_effect_size(n, za, zb, pr):
+    variance = pr*(1-pr)  # эту часть можно заменить на baseline по модели
+    z = (za+zb)**2
+    top = 2*variance*z
+    bottom = n
+    E = math.sqrt(top/n)
+    return E
 
-    *   [Change kernel](#)
-*   [Help](#)
-    *   [User Interface Tour](#)
-    *   [Keyboard Shortcuts](#)
-    *   [Edit Keyboard Shortcuts](#)
+# минимальный эффект
+measurable_effect_size(n, alpha_Zscore, beta_Zscore, baseline_probability)
+```
 
-    *   [Notebook Help](http://nbviewer.jupyter.org/github/ipython/ipython/blob/3.x/examples/Notebook/Index.ipynb "Opens in a new window")
-    *   [Markdown](https://help.github.com/articles/markdown-basics/ "Opens in a new window")
 
-    *   [About](#)
 
+
+    0.01
+
+
+
+## Alpha Cutoff 
+
+Сделаем обработку параметра Alpha на количество ожидаемых значений (для классификации), важно для ошибки первого рода. 
+
+Мы считаем - Familywise Error Rate (Alpha Inflation)
+
+
+```python
+# количество сегментов для сравнения (кол-во значений в таргите)
+segments = 2
+```
+
+
+```python
+# вероятность ошибки в тести, определеяем для действия - alpha cutoff
+
+1 - (1-alpha)**segments
+```
+
+
+
+
+    0.09750000000000003
+
+
+
+
+```python
+print("Допустимые коррекции:")
+print("Тестирование гипотез на уровне α∗ = (α/segments) = ({a}/{seg}) = {aseg} (где {seg} - кол-во сегментов в группе).".format(a=alpha, seg=segments, aseg = alpha/segments))
+print("Гарантированная ошибка 1 типа не будет привышать α = {}".format(round((1 - (1-alpha)**segments),3)))
+print("However, this adjustment may be too conservative.")
+```
+
+    Допустимые коррекции:
+    Тестирование гипотез на уровне α∗ = (α/segments) = (0.05/2) = 0.025 (где 2 - кол-во сегментов в группе).
+    Гарантированная ошибка 1 типа не будет привышать α = 0.098
+    However, this adjustment may be too conservative.
+    
+
+---
+
+## Данные
+
+Для теста надо иметь в данных следующее:
+
+- id пользователя 
+- дата
+- тип группы 
+- параметры для сравнения
+
+
+```python
+file_name = 'Data/sd.csv'
+date_sort = 'date_visit'
+
+# загрузим
+data = pd.read_csv(file_name,
+                  converters= {date_sort: pd.to_datetime} )
+df = data.copy()
+df = df.sort_values(date_sort, ascending = True)
+df = df[df['version'].isin(['A1', 'A2'])]
+
+# Определение конверсий
+traffic_label = 'clicked'
+conversion_label = 'liked'
+
+# Группировка
+user_label = 'user_id'
+date_label = 'date_visit'
+segment_label = 'version'
+
+segment_list = list(df[segment_label].unique())
+
+df.head()
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>user_id</th>
+      <th>date_joined</th>
+      <th>date_visit</th>
+      <th>version</th>
+      <th>type</th>
+      <th>category</th>
+      <th>visits</th>
+      <th>clicked</th>
+      <th>clicks</th>
+      <th>liked</th>
+      <th>likes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>312</th>
+      <td>31098584</td>
+      <td>2018-04-27</td>
+      <td>2018-04-23</td>
+      <td>A1</td>
+      <td>1</td>
+      <td>NaN</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>310</th>
+      <td>31098581</td>
+      <td>2018-04-27</td>
+      <td>2018-04-23</td>
+      <td>A2</td>
+      <td>0</td>
+      <td>NaN</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>309</th>
+      <td>31098580</td>
+      <td>2018-04-27</td>
+      <td>2018-04-23</td>
+      <td>A1</td>
+      <td>0</td>
+      <td>NaN</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>307</th>
+      <td>31098577</td>
+      <td>2018-04-27</td>
+      <td>2018-04-23</td>
+      <td>A2</td>
+      <td>1</td>
+      <td>NaN</td>
+      <td>1</td>
+      <td>1</td>
+      <td>4</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>314</th>
+      <td>31098589</td>
+      <td>2018-04-27</td>
+      <td>2018-04-23</td>
+      <td>A2</td>
+      <td>1</td>
+      <td>M</td>
+      <td>1</td>
+      <td>1</td>
+      <td>5</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
+
+
+#### Обзор сегментов
+
+
+```python
+variations = len(segment_list)
+print('Different segments: ',segment_list)
+print('Number of segments: ', variations)
+```
+
+    Different segments:  ['A1', 'A2']
+    Number of segments:  2
+    
+
+### Траффик по дням
+
+
+```python
+# Агрегат по дню
+daily_users = pd.DataFrame(d2.groupby(date_label)[user_label].nunique()).reset_index()
+daily_traffic = pd.DataFrame(d2.groupby(date_label)[traffic_label].sum()).reset_index()
+daily_conversions = pd.DataFrame(d2.groupby(date_label)[conversion_label].sum()).reset_index()
+
+
+# Визуализируем
+plt.subplots(figsize=(13, 6))
+plt.plot(pd.to_datetime(daily_users[date_label]), daily_users[user_label], label = 'users')
+plt.plot(pd.to_datetime(daily_traffic[date_label]), daily_traffic[traffic_label], label = ('traffic: ' + traffic_label))
+plt.plot(pd.to_datetime(daily_conversions[date_label]), daily_conversions[conversion_label], label = ('conversion: ' + conversion_label))
+plt.xlabel('Date', fontsize=15)
+plt.xticks(fontsize=15, rotation=30)
+plt.yticks(fontsize=15)
+plt.title('Daily: Users, Traffic & Conversions', fontsize=18)
+plt.legend(fontsize=15)
+plt.show()
+```
+
+
+![png](output_22_0.png)
+
+
+
+```python
+# Conversion Rate
+round((daily_conversions[conversion_label]/daily_traffic[traffic_label]).mean()*100,2)
+```
+
+
+
+
+    40.43
+
+
+
+
+```python
+# Average Traffic / User
+round((daily_traffic[traffic_label]/daily_users[user_label]).mean(),2)
+```
+
+
+
+
+    0.96
+
+
+
+
+```python
+# Average Conversions / User
+round((daily_conversions[conversion_label]/daily_users[user_label]).mean(),2)
+```
+
+
+
+
+    0.39
+
+
+
+### Таблица сегментов
+
+
+```python
+# выделение колонок для агрегата'traffic' / 'conversion'
+aggregation_column = [traffic_label, conversion_label]
+traffic = []
+conversions = [] 
+
+# расчет агрегатов
+for i in range(variations):
+    v, c = df[df[segment_label] == segment_list[i] ][aggregation_column[:2]].sum()
+
+    traffic.append(v)
+    conversions.append(c)
+    
+    
+# новый DF   
+dfp_simple = pd.DataFrame({
+    "converted": conversions,
+    "traffic": traffic
+}, index = segment_list)
+
+dfp_simple
+
+#dfp = dfp_simple.copy().sort_index()
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>converted</th>
+      <th>traffic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>A1</th>
+      <td>42</td>
+      <td>86</td>
+    </tr>
+    <tr>
+      <th>A2</th>
+      <td>37</td>
+      <td>88</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
+
+
+
+```python
+dfp = dfp_simple.copy().sort_index()
+
+# Сумма по всем колонкам
+dfp.loc['Total'] = dfp.sum()
+
+# определение не сконвертируемых
+dfp['not_converted'] = dfp['traffic'] - dfp['converted']
+
+# отношение конвертируемых к траффику
+proportion = dfp.converted/dfp.traffic
+dfp['converted_proportion'] = proportion
+
+# STD
+dfp['standard_error'] = ((proportion * (1-proportion))/dfp.traffic)**(.5)
+
+# % траффика
+n = dfp.loc['Total']['traffic']
+dfp['population_percentage'] = dfp['traffic']/n
+
+dfp
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>converted</th>
+      <th>traffic</th>
+      <th>not_converted</th>
+      <th>converted_proportion</th>
+      <th>standard_error</th>
+      <th>population_percentage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>A1</th>
+      <td>42</td>
+      <td>86</td>
+      <td>44</td>
+      <td>0.488372</td>
+      <td>0.053902</td>
+      <td>0.494253</td>
+    </tr>
+    <tr>
+      <th>A2</th>
+      <td>37</td>
+      <td>88</td>
+      <td>51</td>
+      <td>0.420455</td>
+      <td>0.052621</td>
+      <td>0.505747</td>
+    </tr>
+    <tr>
+      <th>Total</th>
+      <td>79</td>
+      <td>174</td>
+      <td>95</td>
+      <td>0.454023</td>
+      <td>0.037744</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
+
+
+### Plot
+
+
+```python
+# визуализируем BarPlot
+labels = dfp.index[:-1].tolist()
+label_index = np.arange(len(labels))
+values = (round(dfp['converted_proportion'][:-1]*100,2)).tolist()
+half_ci = (round(dfp['standard_error'][:-1]*1.96*100,2)).tolist()
+plt.subplots(figsize=(13, 6))
+plt.bar(label_index, values, yerr=half_ci, alpha=0.75,
+       color= color_hex_list[0:len(labels)],
+       error_kw=dict(ecolor='black', lw=2, capsize=5, capthick=2))
+plt.xlabel('Segment', fontsize=15)
+plt.ylabel('% Conversion', fontsize=15)
+plt.xticks(label_index, labels, fontsize=13, rotation=30)
+plt.yticks(fontsize=15)
+plt.title('Conversion Rate / Segment', fontsize=18)
+plt.show()
+```
+
+
+![png](output_30_0.png)
+
+
+# ТЕСТИРОВАНИЕ МОДЕЛИ ЛОКАЛЬНО
+
+## 2 Sample
+
+*Тип теста: z-test*
+
+
+- H0: Нет разницы между сегментами и уровнем конверсии
+- H1: Есть разница между сегментами и уровнем конверсии
+
+!-> A1 - основная, старая модель, все остальные это новые "челленджеры"
+
+
+```python
+variation1 = 'A1'
+variation2 = 'A2'
+```
+
+### Расчет параметров по каждому сегменту
+
+
+```python
+x1 = dfp.loc[variation1]['converted']
+n1 = dfp.loc[variation1]['traffic']
+x2 = dfp.loc[variation2]['converted']
+n2 = dfp.loc[variation2]['traffic']
+
+print(variation1, 'Converted:', x1)
+print(variation1, 'Traffic:', n1)
+print(variation2, 'Converted:', x2)
+print(variation2, 'Traffic:', n2)
+```
+
+    A1 Converted: 42.0
+    A1 Traffic: 86.0
+    A2 Converted: 37.0
+    A2 Traffic: 88.0
+    
+
+### Сравнение результатов
+
+
+```python
+p1 = x1/n1
+p2 = x2/n2
+p = (x1+x2)/(n1+n2)
+print('Кол-во (', variation1 ,'): {0:.2f}%'.format(100*p1))
+print('Кол-во (', variation2 ,'): {0:.2f}%'.format(100*p2))
+print('Среднее кол-во по всем группам: {0:.2f}%'.format(100*p))
+print('% разница между группами: {0:.2f}%'.format(100*(p2-p1)))
+print('% относительная разница между группами: {0:.2f}%'.format(100*(p2-p1)/p1))
+
+
+var = p*(1-p)*(1/n1+1/n2)
+se = math.sqrt(var)
+print('\nVariance: {0:.4f}%'.format(100*var))
+print('Standard Error: {0:.2f}%'.format(100*se))
+
+z = (p1-p2)/se
+pvalue = 1-stats.norm.cdf(abs(z))
+pvalue *= 2-one_sided
+print('\nz-stat: {z}'.format(z=z))
+print('p-value: {p}'.format(p=pvalue))
+```
+
+    Кол-во ( A1 ): 48.84%
+    Кол-во ( A2 ): 42.05%
+    Среднее кол-во по всем группам: 45.40%
+    % разница между группами: -6.79%
+    % относительная разница между группами: -13.91%
+    
+    Variance: 0.5699%
+    Standard Error: 7.55%
+    
+    z-stat: 0.8996463724803273
+    p-value: 0.184154235386902
+    
+
+### Фиксирование разниц
+
+
+```python
+m_proportion = abs(min((1-p1),(1-p1))-1)
+min_detectable_effect_size = measurable_effect_size(min([n1, n2]), alpha_Zscore, beta_Zscore, m_proportion)
+print("Для текущего размера группы {n} и с baseline {m:.2f},\nмы можем получить разницу в {e:.2f}%."
+      .format(n = min([n1, n2]), m = m_proportion, e=min_detectable_effect_size*100))
+print('\n')
+
+
+n1 = sample_size(p2-p1, alpha_Zscore, beta_Zscore, baseline_probability)
+print("Разница {d:.2f}%, которая требуется для минимальной группы {n_needed}"
+      .format(d=abs(100*(p2-p1)), n_needed = round(n1,0)))
+print('\n')
+
+print("Alpha - {a:.2f}\nBeta - {b:.2f}".format(a = alpha_Zscore, b = beta_Zscore))
+```
+
+    Для текущего размера группы 86.0 и с baseline 0.49,
+    мы можем получить разницу в 18.95%.
+    
+    
+    Разница 6.79%, которая требуется для минимальной группы 241.0
+    
+    
+    Alpha - 1.64
+    Beta - 0.84
+    
+
+**Нужно ли больше данных?**
+
+
+```python
+abs(p2-p1) >= min_detectable_effect_size
+
+if abs(p2-p1) >= min_detectable_effect_size:
+    print("Нет, данных достаточно для определения значимости")
+else:
+    print("Да, мы должны получить больше данных для определения значимости изменений")
+```
+
+    Да, мы должны получить больше данных для определения значимости изменений
+    
+
+####  Интерпритация результатов
+
+! -> Только, если больше не нужно больше данных
+
+
+```python
+print('p-value {p} меньше, чем alpha, {alpha}?\n'.format(p=round(pvalue,5), alpha=alpha))
+if (pvalue < alpha):
+    print('p-value меньше, чем alpha, 0-гипотеза отвергается (null-hypothesis = no difference)')
+else: 
+    print('Нет, 0-гипотеза не может быть отвергнута')
+```
+
+    p-value 0.18415 меньше, чем alpha, 0.05?
+    
+    Нет, 0-гипотеза не может быть отвергнута
+    
+
+### Доверительный интервал - для эффективного размера группы
+
+
+```python
+# z-statistics
+z_critical = stats.norm.ppf(1-alpha*(1-0.5*(1-one_sided)))
+
+# верхний и нижний уровень значимости
+ci_low = (p2-p1) - z_critical*se
+ci_upp = (p2-p1) + z_critical*se
+
+print(' 95% Confidence Interval = ( {0:.2f}% , {1:.2f}% )'
+      .format(100*ci_low, 100*ci_upp))
+```
+
+     95% Confidence Interval = ( -19.21% , 5.63% )
+    
+
+### Stats Model Formula
+
+2х хвостовой тест
+
+
+```python
+counts = np.array([x1, x2])
+nobs = np.array([n1, n2])
+
+stat, pval = proportions_ztest(counts, nobs, alternative = 'smaller')
+print('z-stat: {0:.4f}'.format(stat))
+print('p-value: {0:.8f}'.format(pval))
+```
+
+    z-stat: -4.6325
+    p-value: 0.00000181
+    
+
+#### Extra
+
+
+```python
+# 2х хвостовой тест результат
+pvalue = 1-stats.norm.cdf(abs(z))
+pvalue *= 2-False
+print('p-value: {p}'.format(p=pvalue))
+```
+
+    p-value: 0.368308470773804
+    
+
+
+```python
+# 1 хвостовой тест
+pvalue = 1-stats.norm.cdf(abs(z))
+pvalue *= 2-True
+print('p-value: {p}'.format(p=pvalue))
+```
+
+    p-value: 0.184154235386902
+    
+
+## 2+ Sample Proportion
+
+*Тип теста: Chi Square*
+
+**Гипотезы**
+
+- H0: Нет разницы между сегментами и уровнем конверсии
+- H1: Есть разница между сегментами и уровнем конверсии 
+
+### Main Question: 
+
+Есть разница между моделями (сегментами)? 
+
+
+```python
+# Повторю загрузку для добавления сегментов
+file_name = 'Data/sd.csv'
+date_sort = 'date_visit'
+data = pd.read_csv(file_name,
+                  converters= {date_sort: pd.to_datetime} )
+
+df = data.copy()
+df = df.sort_values(date_sort, ascending = True)
+df = df[df['version'].isin(['A1', 'A2','B', 'C'])]
+
+traffic_label = 'clicked'
+conversion_label = 'liked'
+user_label = 'user_id'
+date_label = 'date_visit'
+segment_label = 'version'
+segment_list = list(df[segment_label].unique())
+variations = len(segment_list)
+
+aggregation_column = [traffic_label, conversion_label]
+traffic = []
+conversions = [] 
+
+for i in range(variations):
+    v, c = df[df[segment_label] == segment_list[i] ][aggregation_column[:2]].sum()
+    
+    traffic.append(v)
+    conversions.append(c)
+    
+dfp_simple = pd.DataFrame({
+    "converted": conversions,
+    "traffic": traffic}, 
+    index = segment_list)
+
+
+dfp = dfp_simple.copy().sort_index()
+dfp.loc['Total'] = dfp.sum()
+dfp['not_converted'] = dfp['traffic'] - dfp['converted']
+proportion = dfp.converted/dfp.traffic
+dfp['converted_proportion'] = proportion
+dfp['standard_error'] = ((proportion * (1-proportion))/dfp.traffic)**(.5)
+n = dfp.loc['Total']['traffic']
+dfp['population_percentage'] = dfp['traffic']/n
+dfp
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>converted</th>
+      <th>traffic</th>
+      <th>not_converted</th>
+      <th>converted_proportion</th>
+      <th>standard_error</th>
+      <th>population_percentage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>A1</th>
+      <td>42</td>
+      <td>86</td>
+      <td>44</td>
+      <td>0.488372</td>
+      <td>0.053902</td>
+      <td>0.248555</td>
+    </tr>
+    <tr>
+      <th>A2</th>
+      <td>37</td>
+      <td>88</td>
+      <td>51</td>
+      <td>0.420455</td>
+      <td>0.052621</td>
+      <td>0.254335</td>
+    </tr>
+    <tr>
+      <th>B</th>
+      <td>48</td>
+      <td>92</td>
+      <td>44</td>
+      <td>0.521739</td>
+      <td>0.052079</td>
+      <td>0.265896</td>
+    </tr>
+    <tr>
+      <th>C</th>
+      <td>37</td>
+      <td>80</td>
+      <td>43</td>
+      <td>0.462500</td>
+      <td>0.055744</td>
+      <td>0.231214</td>
+    </tr>
+    <tr>
+      <th>Total</th>
+      <td>164</td>
+      <td>346</td>
+      <td>182</td>
+      <td>0.473988</td>
+      <td>0.026844</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
+
+
+
+```python
+dfpTo = dfp[['converted', 'not_converted', 'traffic']].T
+dfpTo
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>A1</th>
+      <th>A2</th>
+      <th>B</th>
+      <th>C</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>converted</th>
+      <td>42</td>
+      <td>37</td>
+      <td>48</td>
+      <td>37</td>
+      <td>164</td>
+    </tr>
+    <tr>
+      <th>not_converted</th>
+      <td>44</td>
+      <td>51</td>
+      <td>44</td>
+      <td>43</td>
+      <td>182</td>
+    </tr>
+    <tr>
+      <th>traffic</th>
+      <td>86</td>
+      <td>88</td>
+      <td>92</td>
+      <td>80</td>
+      <td>346</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
+
+
+### % пропорций (вероятности)
+
+
+```python
+dfpTe = dfpTo.copy()
+
+# заменим вероятностями
+for i in range(variations):
+    for j in range(0, 2):
+        dfpTe.iloc[j,i] = (dfpTo.loc['traffic'][i]*dfpTo['Total'][j])/n
+```
+
+### Chi Square / p-value
+
+
+```python
+o = dfpTo.drop(dfpTo.columns[-1], axis = 1)[:-1]
+e = dfpTe.drop(dfpTe.columns[-1], axis = 1)[:-1]
+
+ss = (o-e)**2/e
+ch2 = ss.values.sum()
+ch2
+```
+
+
+
+
+    1.9666036399234188
+
+
+
+
+```python
+# P-value (степень свободы - 1)
+pvalue_chi = 1 - stats.chi2.cdf(ch2, variations-1)
+pvalue_chi
+```
+
+
+
+
+    0.5793670974852936
+
+
+
+#### Интерпретация результатов
+
+
+```python
+print('p-value {p} меньше, чем alpha, {alpha}?\n'.format(p=round(pvalue_chi,5), alpha=alpha))
+if (pvalue < alpha):
+    print('p-value меньше, чем alpha, 0-гипотеза отвергается (null-hypothesis = no difference)')
+else: 
+    print('Нет, 0-гипотеза не может быть отвергнута')
+```
+
+    p-value 0.57937 меньше, чем alpha, 0.05?
+    
+    Нет, 0-гипотеза не может быть отвергнута
+    
+
+---
+
+### Main Question: 
+Какая модель (сегмент) лучше?
+
+### Marascuilo Procedure (аналог Tukey-Kramer Test)
+
+О тесте: [ссылка](https://www.itl.nist.gov/div898/handbook/prc/section4/prc474.htm)
+
+
+
+```python
+# списки итерации
+prp = list(dfp_simple['converted']/dfp_simple['traffic'])
+vis = list(dfp_simple['traffic'])
+seg = list(dfp_simple.index.values)
+
+# Хи2
+c2 = stats.chi2.cdf(ch2, variations-1)
+
+# списки для заполнения в цикле
+diff = []
+critical_value = []
+segment1 = []
+segment2 = []
+proportion1 = []
+proportion2 = []
+segment1_size = []
+segment2_size = []
+smallest_measurable_effect_size = []
+```
+
+
+```python
+# Парное сравнение сегментов (моделей)
+# Перебор всех со всеми
+for i in range(0,(variations)):
+    for j in range((i+1),variations):
+        segment1.append(seg[i])
+        segment2.append(seg[j])
+        
+        proportion1.append(prp[i])
+        proportion2.append(prp[j])
+        
+        segment1_size.append(vis[i])
+        segment2_size.append(vis[j])
+        smaller_sample_size = min(vis[i], vis[j])
+        max_proportion = abs(min((1-prp[i]),(1-prp[j]))-1)
+        es = measurable_effect_size(smaller_sample_size, alpha_Zscore, beta_Zscore, max_proportion)
+        smallest_measurable_effect_size.append(es)
+
+        d = prp[i]-prp[j]
+        diff.append(d)
+    
+        cr = math.sqrt(c2)*math.sqrt(prp[i]*(1-prp[i])/vis[i] + prp[j]*(1-prp[j])/vis[j])
+        critical_value.append(cr)
+
+```
+
+
+```python
+# Создаем DataFrame на основе вычислений
+dfm = []
+dfm = pd.DataFrame({
+    "segment1" : segment1,
+    "segment2" : segment2,
+    "segment1_size": segment1_size,
+    "segment2_size": segment2_size,
+    "proportion1": proportion1,
+    "proportion2": proportion2,
+    "smallest_measurable_effect_size": smallest_measurable_effect_size,
+    "diff": diff,
+    "critical_value": critical_value
+})
+```
+
+### Определим значимость
+
+Необходимые переменные:
+- alpha 
+- beta 
+- размер теста
+- эффективный размер сегмента для теста
+
+
+```python
+# сделаем фильтр всех результатов
+dfm['significant'] = (abs(dfm['diff']) > dfm['critical_value'])
+# определим финальный фильтр для таблицы
+dfm['signficant_effect_size'] = ( (abs(dfm['diff']) > dfm['critical_value']) & ( dfm['diff'] >= 
+                                 dfm['smallest_measurable_effect_size']) )
+    
+# обозначим наименование колонок
+column_order = ['segment1', 'proportion1', 'segment2', 'proportion2', 'diff', 'smallest_measurable_effect_size',
+                'critical_value', 'significant', 'signficant_effect_size']
+
+# сортировка по наибольшему стат.эффекту
+dfm[column_order].sort_values(['diff', 'signficant_effect_size'], ascending = [False, True])
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>segment1</th>
+      <th>proportion1</th>
+      <th>segment2</th>
+      <th>proportion2</th>
+      <th>diff</th>
+      <th>smallest_measurable_effect_size</th>
+      <th>critical_value</th>
+      <th>significant</th>
+      <th>signficant_effect_size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2</th>
+      <td>B</td>
+      <td>0.521739</td>
+      <td>A2</td>
+      <td>0.420455</td>
+      <td>0.101285</td>
+      <td>0.187248</td>
+      <td>0.048017</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>A1</td>
+      <td>0.488372</td>
+      <td>A2</td>
+      <td>0.420455</td>
+      <td>0.067918</td>
+      <td>0.189541</td>
+      <td>0.048855</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>B</td>
+      <td>0.521739</td>
+      <td>C</td>
+      <td>0.462500</td>
+      <td>0.059239</td>
+      <td>0.196387</td>
+      <td>0.049477</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>C</td>
+      <td>0.462500</td>
+      <td>A2</td>
+      <td>0.420455</td>
+      <td>0.042045</td>
+      <td>0.196019</td>
+      <td>0.049717</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>B</td>
+      <td>0.521739</td>
+      <td>A1</td>
+      <td>0.488372</td>
+      <td>0.033367</td>
+      <td>0.189413</td>
+      <td>0.048610</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>C</td>
+      <td>0.462500</td>
+      <td>A1</td>
+      <td>0.488372</td>
+      <td>-0.025872</td>
+      <td>0.196520</td>
+      <td>0.050291</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
 </div>
 
-<script type="text/javascript">sys_info = {"notebook_version": "6.0.3", "notebook_path": "D:\\installprogramm\\Anaconda3\\lib\\site-packages\\notebook", "commit_source": "", "commit_hash": "", "sys_version": "3.7.6 (default, Jan 8 2020, 20:23:39) [MSC v.1916 64 bit (AMD64)]", "sys_executable": "D:\\installprogramm\\Anaconda3\\python.exe", "sys_platform": "win32", "platform": "Windows-10-10.0.18362-SP0", "os_name": "nt", "default_encoding": "utf-8"};</script> <script type="text/javascript">function _remove_token_from_url() { if (window.location.search.length <= 1) { return; } var search_parameters = window.location.search.slice(1).split('&'); for (var i = 0; i < search_parameters.length; i++) { if (search_parameters[i].split('=')[0] === 'token') { // remote token from search parameters search_parameters.splice(i, 1); var new_search = ''; if (search_parameters.length) { new_search = '?' + search_parameters.join('&'); } var new_url = window.location.origin + window.location.pathname + new_search + window.location.hash; window.history.replaceState({}, "", new_url); return; } } } _remove_token_from_url();</script>
+
+
+### Какая модель имеет статистическую значимость?
+
+
+```python
+dfm[dfm['signficant_effect_size'] == True][['segment1', 'segment2']]
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>segment1</th>
+      <th>segment2</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+
+
+
+---
+
+#### Вывод: 
+
+Все новые модели не имееют значительного улучшения и не могут быть приняты. 
+
+Модель A2 имеет потенциал. 
+
 
 -----------
 
